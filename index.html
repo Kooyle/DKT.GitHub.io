@@ -1,0 +1,464 @@
+<!--
+* GPL 2021, Nenge.net All rights reserved.
+</script>
+-->
+<!doctype html>
+<html lang="cmn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="/icon/gba2.png">
+    <link rel="icon" href="/icon/gba2.png" type="image/png" />
+    <meta name="viewport"
+        content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
+    <title>GBA模拟器</title>
+
+<body>
+    <style>
+        body {
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .gba-body {
+            width: 100%;
+            margin: 0px auto;
+            text-align: center;
+            overflow: hidden;
+            background-color: #000;
+            position: relative;
+            left: 0px;
+            top: 0px;
+            z-index: 10000;
+            user-select: none;
+            user-zoom: none;
+            -moz-user-select: none;
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+        }
+
+        .gba-pic {
+            max-height: 100vh;
+            max-width: 100vw;
+            max-width: 900px;
+            width: 100%;
+            margin: 0px auto;
+            z-index: 9999;
+        }
+
+        .gba-ctrl {
+            z-index: 10002;
+            width: 100%;
+            left: 0px;
+            top: 0px;
+            height: 100%;
+            position: absolute;
+        }
+
+        .gba-list,
+        .gba-msg {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            overflow: auto;
+            overflow-x: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff4d;
+            z-index: 10005;
+            user-select: text;
+            -moz-user-select: text;
+            -webkit-user-drag: text;
+            -webkit-user-select: text;
+        }
+
+        .gba-list-file,.gba-result,
+        .gba-list-tips,
+        .gba-list-ctrl,
+        .gba-list-pad,
+        .gba-db-list,
+        .gba-list>h3 {
+            list-style: auto;
+            font-size: 16px;
+            margin: 5px !important;
+            padding: 10px !important;
+            background-color: #ffffffdc;
+            word-break: break-all;
+        }
+
+        .gba-list-pad-txt {
+            width: 90% !important;
+            margin: 0px auto !important;
+            height: 300px;
+        }
+
+        .gba-list-ctrl table td,
+        .gba-list-ctrl table th {
+            text-align: center !important;
+        }
+
+        .gba-list li {
+            margin: 5px 0px;
+            padding: 5px 0px;
+            border-bottom: 2px #3fadfb solid;
+        }
+
+        .gba-list-file li>div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gba-body input[data-btn] {
+            background-image: linear-gradient(180deg, #3fadfb, #2196f3b5, #2196f3);
+            border: 1px solid;
+            font-size: 18px;
+            border-radius: 5px;
+            padding: 2px;
+            margin: 15px 0px;
+        }
+
+        .gba-msg {
+            width: 300px;
+            height: 40px;
+            overflow: visible;
+            display: inline-block;
+            margin: auto;
+            right: 0;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            background-color: #08000050;
+            color: #fff;
+            display: block;
+            font-size: 12px;
+            z-index: 10004;
+        }
+
+        .gba-action {
+            z-index: 10004;
+            position: absolute;
+            left: -50%;
+            top: 0px;
+            height: 100%;
+            width: 50%;
+            background: rgba(255, 255, 255, 0.75);
+            transition: all .5s ease-in;
+            overflow: auto;
+        }
+
+
+        .vk {
+            position: absolute;
+            text-align: center;
+            overflow: hidden;
+            font-size: 2.1875rem;
+            color: #FFF;
+            z-index: 10003;
+            vertical-align: middle;
+            display: inline-block;
+            border: 1px #fff solid;
+            border-radius: 25%;
+            line-height: 150%;
+        }
+        .vk-hide {
+            background-color: transparent !important
+        }
+
+        .vk.active {
+            background-color: rgba(255, 255, 255, 0.75);
+        }
+        .vk[data-k=l]{
+            left: 15px;
+            top: 55px;
+            padding: 2px 8px;
+            width: 35px;
+            font-size: 1.5rem;
+        }
+        .vk[data-k=r]{
+            right: 15px;
+            top: 55px;
+            padding: 2px 8px;
+            width: 35px;
+            font-size: 1.5rem;
+        }
+        .vk[data-k=select]{
+            left: 70px;
+            bottom: 70px;
+            padding: 0px;
+            width: auto;
+            font-size: 1rem;
+        }
+        .vk[data-k=start]{
+            right: 70px;
+            bottom: 70px;
+            padding: 0px;
+            width: auto;
+            font-size: 1rem;
+        }
+        .vk[data-k=up],
+        .vk[data-k=down],
+        .vk[data-k=left],
+        .vk[data-k=right],
+        .vk[data-k=dl],
+        .vk[data-k=dr],
+        .vk[data-k=ul],
+        .vk[data-k=ur]{
+            width: 50px;
+            height: 50px;
+        }
+        .vk[data-k=up]{
+            left: 55px;
+            top: calc(100% * 0.5 - 75px );
+        }
+        .vk[data-k=down]{
+            top: calc(100% * 0.5 + 25px );
+            left: 55px;
+        }
+        .vk[data-k=left]{
+            top: calc(100% * 0.5 - 25px );
+            left: 5px;
+        }
+        .vk[data-k=right]{
+            top: calc(100% * 0.5 - 25px );
+            left: 105px;
+        }
+        .vk[data-k=dl]{
+            left: 5px;
+            top: calc(100% * 0.5 + 25px );
+            border-color: transparent;
+        }
+        .vk[data-k=dr]{
+            left: 105px;
+            top: calc(100% * 0.5 + 25px );
+            border-color: transparent;
+        }
+        .vk[data-k=ul]{
+            top: calc(100% * 0.5 - 75px );
+            border-color: transparent;
+            left: 5px;
+        }
+        .vk[data-k=ur]{
+            top: calc(100% * 0.5 - 75px );
+            left: 105px;
+            border-color: transparent;
+        }
+        .vk[data-k=b],
+        .vk[data-k=a]{
+            width: 65px;
+            height: 65px;
+            line-height: 65px;
+            border-radius: 50%;
+        }
+        
+        .vk[data-k=a]{
+            top: calc(100% * 0.5 - 50px );
+            right: 15px;
+
+        }
+        .vk[data-k=b]{
+            top: calc(100% * 0.5 - 25px );
+            right: 100px;
+
+        }
+        .gba-btn{
+            position: relative;
+            display: inline-block;
+            border-radius: 25%;
+            padding: 7px;
+            width: 18px;
+            height: 18px;
+        }
+        .gba-btn::after{
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+            content: '';
+        }
+        .gba-btn svg{
+            color: #fff;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+            transition: transform 0.3s ease;box-sizing: inherit;display: block;
+    fill: currentColor;
+    height: 16px;
+    pointer-events: none;
+    width: 16px;
+        }
+        
+        .gba-btn.active{
+            background-color: #3fadfb4d;
+        }
+        .gba-btn.active svg circle{
+            stroke:#f5420b
+        }
+        .gba-btn.active svg g path{
+            fill:#3fadfb
+        }
+        .gba-ctrl-menu{
+            position: absolute;
+            display: flex;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    width: 100%;
+    left: 0px;
+            height: 20px;
+            top: 15px;
+            z-index: 10003;
+        }
+        .gba-result{
+            font-size: 12px;
+        }
+        .gba-result-rooms{
+            display: flex;
+    flex-wrap: wrap;justify-content: space-around;
+    align-items: stretch;
+        }
+        .gba-result-rooms>div{
+            background-color: rgba(255, 255, 255, 0.596);
+            border-radius: 20px;
+            border: 1px solid #2196f3 ;
+            margin: 5px;
+            padding: 0px;
+            overflow: hidden;
+        }
+        .gba-result-rooms img{
+            width: 240px;
+        }
+        .gba-result p,
+        .gba-result-rooms h3,
+        .gba-result-rooms input{
+            padding: 0px;
+            margin: 2px auto;
+            font-size: 12px;
+        }
+        .gba-result-rooms h3{
+            background-color: #3fadfb;
+            color: #FFF;
+            word-break: keep-all;
+            word-wrap: initial;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0px;
+        }
+        @media screen and (max-width:600px) {
+            .gba-ctrl {
+                position: relative;
+                height:calc(100vh - 100vw /1.5);
+            }
+
+            .gba-body {
+                width: 100vw;
+                height: 100vh;
+                position: fixed;
+            }
+
+        }
+
+        @media screen and (max-height:600px) {
+            .gba-ctrl {
+                position: absolute;
+                height:calc(100vh - 100vw/1.5);
+                height: 100vh;
+            }
+
+            .gba-body {
+                width: 100vw;
+                height: 100vh;
+                max-width: none;
+                position: fixed;
+            }
+
+            .gba-pic {
+                height: 100vh;
+                width: auto;
+            }
+
+        }
+    </style>
+    <div class="gba-body">
+        <canvas class="gba-pic" width="600" height="400"></canvas>
+        <div class="gba-action">
+            <input type="button" value="游戏数据" data-btn="db-rooms"> | <input type="button" value="即时存档" data-btn="db-state">
+            <hr>
+            <h3>临时加载↓</h3>
+            <input type="button" value="上传SRM" data-btn="do-upsrm"> | <input type="button" value="下载SRM" data-btn="do-downsrm"><br><input type="button" value="上传状态" data-btn="do-upstate"> | <input type="button" value="下载状态" data-btn="do-downstate">
+            <hr>
+            <div style="display: flex;">
+                <div><h3>音量</h3>
+            <input type="range" class="gba-music-range" max="100" min="0"></div>
+            <div><h3>档位</h3>
+            <p><label><input type="radio" name="state" value="0" checked>位置0</label></p><p>
+                <label><input type="radio" name="state" value="1">位置1</label></p><p>
+                <label><input type="radio" name="state" value="2">位置2</label></p><p>
+                <label><input type="radio" name="state" value="3">位置3</label></p><p>
+                <label><input type="radio" name="state" value="4">位置4</label></p>
+    </div>
+            </div>
+            
+            <hr><h3>功能</h3><input type="button" value="音乐" data-btn="do-music"><br>点击后会重启页面,注意先保存!
+        </div><div class="gba-list" style="display: none;">
+            <h3 data-btn="closelist">点击这里关闭</h3>
+            <div class="gba-result"></div>
+            <div class="gba-db-list">
+                <h3>说明</h3>
+                <div>在运行游戏的时候上传存档,只会在内存中，需要自己保存才会储存下来。上传压缩包ZIP/RAR4/7Z会直接保存里面的文件.如果RAR中有密码可在这里输入RAR密码：<input type="text"
+                        value="" class="gba-rar-pass">后上传！</div>这是临时数据库更换:
+                <input type="button" data-btn="changeDB" value="DB1"> |
+                <input type="button" data-btn="changeDB" value="DB2"> |
+                <input type="button" data-btn="changeDB" value="DB3">
+                <div>点击可切换数据库,找回之前的存档.长传存档直接上传含有".srm"的文件即可.</div>
+            </div>
+            <ul class="gba-list-file"></ul>
+            <div class="gba-list-tips">Worker 修改版，原作：<a target="_blank"
+                    href="https://github.com/44670/vba-next-wasm">https://github.com/44670/vba-next-wasm</a><br>启用RTC方法，运行蓝宝石/绿宝石，然后运行中切换回你的游戏，如火红改版。<br>RTC启用成功！
+            </div>
+            <div class="gba-list-ctrl"></div>
+            <div class="gba-list-pad">
+                <h3>手柄参数,基于我的廉价PS4手柄（百元不到）</h3>
+                12上 13下 14左 15右<br>
+                L1/4 R1/5 R2/6 L2/7 R/10 L/11<br>
+                //0 X 1 O 2 ▲ 3 <br>SHARE 8 option 9 PS 16 触摸板按下17<br>
+                模拟器键值：<br>
+                a=&gt;0,b=&gt;1,select=&gt;2,start=&gt;3,right=&gt;4,left=&gt;5,up=&gt;6,down=&gt;7,r=&gt;8,l=&gt;9
+                <textarea class="gba-list-pad-txt" data-btn="Keygamepad"></textarea>
+            </div>
+        </div>
+        <div class="gba-msg" style="display: none;">
+
+        </div>
+        <div class="gba-ctrl">
+        <div class="gba-ctrl-menu">
+            <span data-btn="do-reset" class="gba-btn forward"><svg role="presentation" focusable="false"><path d="M9.7 1.2l.7 6.4 2.1-2.1c1.9 1.9 1.9 5.1 0 7-.9 1-2.2 1.5-3.5 1.5-1.3 0-2.6-.5-3.5-1.5-1.9-1.9-1.9-5.1 0-7 .6-.6 1.4-1.1 2.3-1.3l-.6-1.9C6 2.6 4.9 3.2 4 4.1 1.3 6.8 1.3 11.2 4 14c1.3 1.3 3.1 2 4.9 2 1.9 0 3.6-.7 4.9-2 2.7-2.7 2.7-7.1 0-9.9L16 1.9l-6.3-.7z"></path></svg></span>
+            <span data-btn="do-forward" class="gba-btn gba-forward"><svg viewBox="0 0 80 80"><circle fill="#282828" stroke="#C0C0C0" stroke-width="1.5875" cx="40" cy="35.8" r="32.1"/><g transform="matrix(1.2857144,0,0,1.2857227,-21.553098,-1.8560399)"><path fill="#C0C0C0" d="M48,27.7 c-1-0.7-11.8-9.3-12.1-9.4c-0.2-0.1-0.5-0.2-0.7-0.2c-0.9,0-1.6,0.7-1.6,1.6c0,0,0,0,0,0v19.1c0,0.9,0.7,1.6,1.6,1.6 c0.3,0,0.5-0.1,0.7-0.2c0.3-0.1,11-8.7,12.1-9.4c0.6-0.4,0.9-1,0.9-1.5S48.6,28.1,48,27.7L48,27.7z M64.7,27.7 c-1-0.7-11.8-9.3-12.1-9.4c-0.2-0.1-0.5-0.2-0.7-0.2c-0.9,0-1.6,0.7-1.6,1.6c0,0,0,0,0,0v19.1c0,0.9,0.7,1.6,1.6,1.6c0.3,0,0.5-0.1,0.7-0.2c0.3-0.1,11-8.7,12.1-9.4c0.6-0.4,0.9-1,0.9-1.5S65.3,28.1,64.7,27.7L64.7,27.7z"/></g></svg></span>
+            <span data-btn="do-cheat" class="gba-btn forward"><svg viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z" class=""></path></svg></span>
+            <span data-btn="do-savestate" class="gba-btn loadstate"><svg viewBox="0 0 448 512"><path fill="currentColor" d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z"/></svg></span>
+            <span data-btn="do-loadstate" class="gba-btn loadstate"><svg viewBox="0 0 576 512"><path fill="currentColor" d="M572.694 292.093L500.27 416.248A63.997 63.997 0 0 1 444.989 448H45.025c-18.523 0-30.064-20.093-20.731-36.093l72.424-124.155A64 64 0 0 1 152 256h399.964c18.523 0 30.064 20.093 20.73 36.093zM152 224h328v-48c0-26.51-21.49-48-48-48H272l-64-64H48C21.49 64 0 85.49 0 112v278.046l69.077-118.418C86.214 242.25 117.989 224 152 224z"></path></svg></span>
+            <span data-btn="do-settings" class="gba-btn settings"><svg role="presentation" focusable="false"><path d="M16.135 7.784a2 2 0 0 1-1.23-2.969c.322-.536.225-.998-.094-1.316l-.31-.31c-.318-.318-.78-.415-1.316-.094a2 2 0 0 1-2.969-1.23C10.065 1.258 9.669 1 9.219 1h-.438c-.45 0-.845.258-.997.865a2 2 0 0 1-2.969 1.23c-.536-.322-.999-.225-1.317.093l-.31.31c-.318.318-.415.781-.093 1.317a2 2 0 0 1-1.23 2.969C1.26 7.935 1 8.33 1 8.781v.438c0 .45.258.845.865.997a2 2 0 0 1 1.23 2.969c-.322.536-.225.998.094 1.316l.31.31c.319.319.782.415 1.316.094a2 2 0 0 1 2.969 1.23c.151.607.547.865.997.865h.438c.45 0 .845-.258.997-.865a2 2 0 0 1 2.969-1.23c.535.321.997.225 1.316-.094l.31-.31c.318-.318.415-.781.094-1.316a2 2 0 0 1 1.23-2.969c.607-.151.865-.547.865-.997v-.438c0-.451-.26-.846-.865-.997zM9 12a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg></span>
+        </div>
+            <div class="vk-rect vk" data-k="l">L</div>
+            <div class="vk-rect vk" data-k="r">R</div>
+            <div class="vk-round vk" data-k="a">A</div>
+            <div class="vk-round vk" data-k="b">B</div>
+            <div class="vk-rect vk" data-k="select">Select</div>
+            <div class="vk-rect vk" data-k="start">Start</div>
+            <div class="vk" data-k="left">←</div>
+            <div class="vk" data-k="right">→</div>
+            <div class="vk" data-k="up">↑</div>
+            <div class="vk" data-k="down">↓</div>
+            <div class="vk vk-hide" data-k="ul"></div>
+            <div class="vk vk-hide" data-k="ur"></div>
+            <div class="vk vk-hide" data-k="dl"></div>
+            <div class="vk vk-hide" data-k="dr"></div>
+        </div>
+    </div>
+    <script src="js/dexie.min.js"></script>
+    <script src="/js/NengeApp.js"></script>
+</body>
+
+</html>
