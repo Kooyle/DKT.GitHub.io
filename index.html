@@ -67,7 +67,7 @@
             width: 100%;
             height: 100%;
             background-color: #ffffff4d;
-            z-index: 10005;
+            z-index: 10006;
             user-select: text;
             -moz-user-select: text;
             -webkit-user-drag: text;
@@ -138,14 +138,14 @@
         }
 
         .gba-action {
-            z-index: 10004;
+            z-index: 10005;
             position: absolute;
-            left: -50%;
+            left: -80%;
             top: 0px;
             height: 100%;
-            width: 50%;
+            width: 80%;
             background: rgba(255, 255, 255, 0.75);
-            transition: all .5s ease-in;
+            transition: all .25s ease-in;
             overflow: auto;
         }
 
@@ -384,14 +384,8 @@
     <div class="gba-body">
         <canvas class="gba-pic" width="600" height="400"></canvas>
         <div class="gba-action">
-            <input type="button" value="游戏数据" data-btn="db-rooms"> | <input type="button" value="即时存档" data-btn="db-state">
+            <input type="button" value="游戏数据" data-btn="db-rooms"> | <input type="button" value="状态存档" data-btn="db-state">
             <hr>
-            <h3>临时加载↓</h3>
-            <input type="button" value="上传SRM" data-btn="do-upsrm"> | <input type="button" value="下载SRM" data-btn="do-downsrm"><br><input type="button" value="上传状态" data-btn="do-upstate"> | <input type="button" value="下载状态" data-btn="do-downstate">
-            <hr>
-            <div style="display: flex;">
-                <div><h3>音量</h3>
-            <input type="range" class="gba-music-range" max="100" min="0"></div>
             <div><h3>档位</h3>
             <p><label><input type="radio" name="state" value="0" checked>位置0</label></p><p>
                 <label><input type="radio" name="state" value="1">位置1</label></p><p>
@@ -399,8 +393,10 @@
                 <label><input type="radio" name="state" value="3">位置3</label></p><p>
                 <label><input type="radio" name="state" value="4">位置4</label></p>
     </div>
-            </div>
             
+            <h3>临时加载↓</h3>
+            <input type="button" value="上传SRM" data-btn="do-upsrm"> | <input type="button" value="下载SRM" data-btn="do-downsrm"><br><input type="button" value="上传状态" data-btn="do-upstate"> | <input type="button" value="下载状态" data-btn="do-downstate">
+            <hr>
             <hr><h3>功能</h3><input type="button" value="音乐" data-btn="do-music"><br>点击后会重启页面,注意先保存!
         </div><div class="gba-list" style="display: none;">
             <h3 data-btn="closelist">点击这里关闭</h3>
@@ -458,6 +454,7 @@
         </div>
     </div>
     <script src="js/dexie.min.js"></script>
+    <script src="js/retroarch.js"></script>
     <script src="/js/NengeApp.js"></script>
 </body>
 

@@ -1,4 +1,5 @@
 let NengeApp = new class {
+    Module = {};
     CoreFile = "/wasm/vbanext-wasm.7z";
     Core7z = "/js/extract7z.min.js";
     CoreZip = "/js/jszip.js";
@@ -12,75 +13,15 @@ let NengeApp = new class {
         this.FILE_INPUT.type = 'file';
         this.setConfig();
         this.ConfigEvent();
+        this.KEY.init();
         this.GAMEPAD_EVENT();
         this.initDB();
-        if (window.PointerEvent) {
             this.PointerEvent();
-        }
         return;
     }
     async installCore(result) {
         let File = result.file,
             cfg = File.cfg,
-            js = File['wasmjs'];
-        //防止音乐自动播放
-        js = js.replace(
-            'queueAudio:function(){',
-            'queueAudio:function(){if(!Module.runMusic) return 0;'
-        ).replace(
-            'process:function(queueBuffers){',
-            'process:function(queueBuffers){if(!Module.runMusic) return 0;'
-        ).replace(
-            'function _RWebAudioWrite(buf,size){',
-            'function _RWebAudioWrite(buf,size){if(!Module.runMusic) return 0;'
-        ).replace(
-            'function _RWebAudioInit(latency){',
-            'function _RWebAudioInit(latency){if(!Module.runMusic) return 0;console.log("初始化音乐!");'
-        ).replace(
-            'window.addEventListener("touchstart",function(){if(RA.context){RA.context.resume();var source=RA.context.createBufferSource();source.connect(RA.context.destination);source.start()}},false);',
-            'document.querySelector(".gba-msg").innerHTML=\'<input type="button" value="启动模拟器音乐" data-btn="startMusic">\';document.querySelector(".gba-msg").style.display="";Module.startMusic=()=>{if(RA.context){RA.context.resume();var source=RA.context.createBufferSource();source.connect(RA.context.destination);source.start();console.log("启动");}};Module.MusicNeedRun=true;'
-        ).replace(
-            'if(RA.context.currentTime){',
-            'if(RA.context.currentTime){document.querySelector(".gba-msg").style.display="none";Module.MusicNeedRun=false;'
-        ).replace(
-            'function _RWebAudioSampleRate(){',
-            'function _RWebAudioSampleRate(){if(!Module.runMusic) return 0;'
-        ).replace(
-            /addEventListener\("(\w+)", (\w+), false\);/g,
-            'addEventListener("$1", $2, {passive:false});'
-        ).replace(
-            'eventHandler.useCapture)',
-            'eventHandler.useCapture||{passive:false})'
-        ).replace(
-            'updateCanvasDimensions:function(canvas,wNative,hNative){',
-            'updateCanvasDimensions:function(canvas,wNative,hNative){if(1)return console.log(canvas);'
-        ).replace(
-            'listener(canvas.width,canvas.height)',
-            'return ;listener(canvas.width,canvas.height)'
-        ).replace(
-            'calculateMouseEvent:function(event){',
-            'calculateMouseEvent:function(event){return console.log("移除屏幕事件!"),0;'
-        ).replace(
-            '_emscripten_set_canvas_element_size(target,width,height){',
-            '_emscripten_set_canvas_element_size(target,width,height){console.log(`屏幕设置:${width},${height}`);width=600;height=400;'
-            //).replace(
-            //    'createDataFile:function(parent,name,data,canRead,canWrite,canOwn){',
-            //    'createDataFile:function(parent,name,data,canRead,canWrite,canOwn){console.log(`写入文件:${parent}${name}`);'
-        //).replace(
-        //    'writeFile:function(path,data,opts){',
-        //   'writeFile:function(path,data,opts){console.log(path);'
-        ).replace(
-            'function _emscripten_memcpy_big(dest,src,num){',
-            //131072  存档  游戏文件33554432 第一次是游戏文件
-            'function _emscripten_memcpy_big(dest,src,num){' 
-            //+'console.log(`//新位置${dest} 开始位置:${src} 长度:${num} = > \nModule.HEAPU8.set(Module.HEAPU8.subarray(${src}, ${src} + ${num}), ${dest})`);'
-            //+'if(!Module["ROOM_POS"])Module["ROOM_POS"] = dest;'
-            //+'if(!Module.SRM_POS&&(num==139264||131072==num))Module.SRM_POS = dest;'
-
-        );
-        //
-        //"use strict";
-        let EmulatorJS = Function('var tempDouble,tempI64,setImmediate;' + js + ';return EmulatorJS')(this),
             Module = {
                 'TOTAL_MEMORY': 0x10000000,
                 'noInitialRun': !0x0,
@@ -88,10 +29,12 @@ let NengeApp = new class {
                 'SRM_LEN': 131072,
                 'ROOM_POS': 6647264,
                 'STATE_POST': 8787512,
+                'CanvasWidth':600,
+                'CanvasHeight':400,
                 'MusicNeedRun':false,
                 'arguments': [],
                 'preRun': [],
-                'postRun': [],
+                'postRun': [e=>console.log(e)],
                 'canvas': document.querySelector('.gba-pic'),
                 'print': e => console.log(e),
                 'printErr': e => console.warn(e),
@@ -111,7 +54,7 @@ let NengeApp = new class {
                      * 
                      */
                     //Module.HEAPU8.set(Module.HEAPU8.subarray(6647264, 6647264 + 16777216), 23424512)
-                    //fetch('/rooms/test.gba').then(v=>v.arrayBuffer()).then(v=>{result.gba = new Uint8Array(v);
+                    //fetch('/rooms/test.gba').then(v=>v.arrayBuffer()).then(v=>{result.gba = new Uint8Array(v);this.GameName = 'test.gba';
                     Module['FS']['createDataFile']('/', 'game.gba', result.gba, !0x0, !0x1);
                     Module['FS']['createDataFile']('/', 'game.srm', result.srm ? result.srm : new Uint8Array(131072), !0x0, !0x1);
                     //Module.HEAPU8.set(cb, this.Module.SRM_POS);
@@ -138,7 +81,7 @@ let NengeApp = new class {
                 'wasmBinary': File['wasmdata'] && new Uint8Array(File['wasmdata'])
             };
         EmulatorJS(Module);
-        Module['FS']['createFolder']('/', 'etc', !0x0, !0x0),
+            Module['FS']['createFolder']('/', 'etc', !0x0, !0x0),
             Module['FS']['mkdir']('/data'),
             Module['FS']['mkdir']('/config'),
             Module['FS']['mkdir']('/system'),
@@ -170,60 +113,6 @@ let NengeApp = new class {
         e.preventDefault();
         e.stopPropagation();
         return false;
-    }
-    PointerEvent() {
-        let CodeMap = {},
-            Click = ['pointerdown', 'pointerup', 'pointerout', 'pointercancel'];
-        for (var i in this.KeyMap) CodeMap[this.KeyMap[i].toLowerCase()] = i;
-        ['pointerover', 'pointermove', 'pointerout', 'pointerdown', 'pointerup', 'pointerenter', 'pointerleave', 'pointercancel', 'lostpointercapture', 'gotpointercapture'].forEach(val =>
-            document.addEventListener(val, (e) => {
-                if (!e.target) return;
-                if (!this.Module || !this.Module.noExitRuntime) return;
-                let elm = e.target;
-                if (Click.includes(e.type)) {
-                    let key = elm.getAttribute('data-k'),
-                        btn = elm.getAttribute('data-btn'),
-                        Hold = e.type == "pointerdown" ? 1 : 0;;
-                    if (key) {
-                        if (CodeMap[key]) {
-                            this.sendKey(CodeMap[key], Hold);
-                            return this.stopEvent(e);
-                        } else {
-                            switch (key) {
-                                case 'ul':
-                                    this.sendKey(4, Hold);
-                                    this.sendKey(6, Hold);
-                                    break;
-                                case 'ur':
-                                    this.sendKey(4, Hold);
-                                    this.sendKey(7, Hold);
-                                    break;
-                                case 'dl':
-                                    this.sendKey(5, Hold);
-                                    this.sendKey(6, Hold);
-                                    break;
-                                case 'dr':
-                                    this.sendKey(5, Hold);
-                                    this.sendKey(7, Hold);
-                                    break;
-                            }
-                            return this.stopEvent(e);
-                        }
-                    } else if (btn && e.type == "pointerup") {
-                        btn = btn.toLowerCase();
-                        console.log(elm);
-                        let btnkey = btn.split('-');
-                        if (btnkey[1]) this.btnMap[btnkey[0]][btnkey[1]](e, Hold);
-                        else this.btnMap[btn](e, Hold);
-                        return this.stopEvent(e);
-                    }
-                    return;
-
-                }
-
-            }, {
-                passive: false
-            }))
     }
     Timer = {};
     btnMap = {
@@ -341,7 +230,7 @@ let NengeApp = new class {
                 let ctrl = '<input value="启用" type="button" data-btn="cheat-run"> | <input value="保存并启用" type="button" data-btn="cheat-save"> | <input value="暂停" type="button" data-btn="cheat-stop">';
                 HTML += '</textarea></div>';
                 result.innerHTML = ctrl+ HTML + ctrl;
-                document.querySelector('.gba-list').style.display = '';
+                this.btnMap['openlist']();
                 result = null;
 
             },
@@ -396,7 +285,7 @@ let NengeApp = new class {
                     HTML += `<div><h3>${data.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,data.img||[0]))}"><p>${data.gbaname}</p><p>${data.time.toLocaleString()}</p><input type="button" value="加载" data-btn="db-loadrooms" data-name="${data.name}"> | <input type="button" value="删除" data-btn="db-deleterooms" data-name="${data.name}"></div>`;
                 });
                 result.innerHTML = '<p><input type="button" value="上传gba" data-btn="db-uploadrooms"><br>vbanext-wasm.7z 为运行核心文件,不可删除!</p><div class="gba-result-rooms">' + HTML + '</div>';
-                document.querySelector('.gba-list').style.display = '';
+                this.btnMap['openlist']();
                 result = null;
 
             },
@@ -414,7 +303,7 @@ let NengeApp = new class {
                     }
                 }
                 result.innerHTML = '<div class="gba-result-rooms">' + HTML + '</div>';
-                document.querySelector('.gba-list').style.display = '';
+                this.btnMap['openlist']();
                 result = null;
             },
             'SetRoomDate': cb => {
@@ -506,7 +395,7 @@ let NengeApp = new class {
                 if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
                 let elm = e.target,
                     index = elm.getAttribute('data-index');
-                this.STATE.get(this.GameName).then(
+                    this.STATE.get(this.GameName).then(
                     result => {
                         if(!result) return;
                         let state = result['state' + index];
@@ -514,12 +403,17 @@ let NengeApp = new class {
                             this.STATE_DATA = state;
                             state = null;
                         }
+                        this.btnMap['closelist']();
                     }
                 )
             }
         },
         'closelist': e => {
             document.querySelector('.gba-list').style.display = 'none';
+        },
+        'openlist': e => {
+            document.querySelector('.gba-list').style.display = '';
+            document.querySelector('.gba-action').style.left = '';
         }
     }
     upload(cb) {
@@ -684,6 +578,7 @@ let NengeApp = new class {
         },
         "504B0304": (u8, cb) => {
             //zip
+            return alert('zip稍后测试');
             if (typeof self.JSZip == 'undefined') importScripts("JSZip.js");
             self.JSZip.loadAsync(u8).then(ZipFile => {
                 let READ_ZIP = file => {
@@ -702,6 +597,7 @@ let NengeApp = new class {
         },
         "52617221": (u8, GameName, isZIP, password) => {
             //rar
+            return alert('rar稍后测试');
             let worker = new Worker("libunrar.js");
             worker.onmessage = (e) => {
                 if (e.data && e.data.ls) {
@@ -815,84 +711,12 @@ let NengeApp = new class {
                 }
             }
         }
-
-
-    }
-    KeyGamePad = {
-        0: 8, //※ A
-        1: 0, //● B
-        2: 2, //■ selete
-        3: 3, //▲ start
-        4: 'forward', //L1 LB =>L
-        5: 'switch', //R1 RB =>R
-        6: "loadstate", //L2 LT 加速
-        7: "savestate", //R2 RT 重启
-        8: null, //OPTION
-        9: null, //SHARE
-        10: null, //L L3
-        11: null, //R R3
-        12: 4, //上
-        13: 5, //下
-        14: 6, //左
-        15: 7, //右
-        16: null, //PS键
-        17: null, //触摸板按下
-    };
-    Keyboard = [
-        "Numpad2",
-        "Numpad1",
-        "Numpad0",
-        "NumpadDecimal",
-        "ArrowRight",
-        "ArrowLeft",
-        "ArrowUp",
-        "ArrowDown",
-        "Numpad6",
-        "Numpad3",
-        "KeyU",
-        "KeyY",
-        "KeyH",
-        "KeyJ",
-        "KeyD",
-        "KeyA",
-        "KeyW",
-        "KeyS",
-        "KeyT",
-        "KeyI",
-    ];
-    KeyMap = {
-        0: 'B',
-        1: 'Y',
-        2: 'SELECT',
-        3: 'START',
-        4: 'UP',
-        5: 'DOWN',
-        6: 'LEFT',
-        7: 'RIGHT',
-        8: 'A',
-        9: 'X',
-        10: 'L',
-        11: 'R',
-        12: 'L2',
-        13: 'R2',
-        14: 'L3',
-        15: 'R3',
-        19: 'L STICK UP',
-        18: 'L STICK DOWN',
-        17: 'L STICK LEFT',
-        16: 'L STICK RIGHT',
-        23: 'R STICK UP',
-        22: 'R STICK DOWN',
-        21: 'R STICK LEFT',
-        20: 'R STICK RIGHT'
     }
     sendKey = (key, bool) => this.Module['cwrap']('simulate_input', 'null', ['number', 'number', 'number'])(0, key, bool);
-    
     GAMEPAD_EVENT() {
             this.GAMEPAD_EVENT_RUN = () => {
-                
                 if (!this.Module || !this.Module.noExitRuntime) return;
-                let GamePads = navigator.getGamepads();
+                let GamePads = navigator.getGamepads(),keyState= {};
                 for (let GamePadId = 0; GamePadId < GamePads.length; GamePadId++) {
                     let Gamepad = GamePads[GamePadId];
                     if (Gamepad && Gamepad.connected) {
@@ -900,20 +724,14 @@ let NengeApp = new class {
                             Buttons = Gamepad.buttons;
                         //connected = Gamepad.connected,
                         //GamepadName = Gamepad.id;
-                        
-                        this.sendKey(4,0);
-                        this.sendKey(5,0);
-                        this.sendKey(6,0);
-                        this.sendKey(7,0);
                         for (let btnid = 0; btnid < Buttons.length; btnid++) {
                             //12上 13下 14 左 15右
                             //L1/4  R1/5  L2/6 L3/7   L/10 R11
                             //0 X 1 O 2 ▲ 3 SHARE 8 option 9 PS 16 触摸板按下17
                             //value 越大压力越强
-                                let MapTemp = this.KeyGamePad[btnid];                                    
-
+                                let MapTemp = this.KEY.KeyGamePad[btnid];                                    
                                 if(typeof MapTemp == 'number'){
-                                    this.sendKey(MapTemp,Buttons[btnid].value > 0.5)
+                                    Buttons[btnid].value > 0.5&&(keyState[MapTemp] = 1);
                                 }else if(Buttons[btnid].value > 0.8){
                                     if(typeof MapTemp == 'string'&&this.btnMap['do'][MapTemp]){
                                     clearTimeout(this.Timer[MapTemp]);
@@ -937,10 +755,10 @@ let NengeApp = new class {
                             //axeid%2 1上下
                             if (axeS != 0) {
                                 if (axeid % 2 == 0) {
-                                   axeS+5==6 ? this.sendKey(6,1) :this.sendKey(7,1);
+                                   axeS+5==6 ? (keyState[6]=1) :(keyState[7]=1)
                                     //console.log(axeS+5);
                                 } else if (axeid % 2 == 1) {
-                                    axeS+3==4?this.sendKey(4,1):this.sendKey(5,1);
+                                    axeS+3==4?(keyState[4]=1):(keyState[5]=1)
                                     //console.log(axeS+3);
                                     //上下
                                 }
@@ -948,6 +766,8 @@ let NengeApp = new class {
                         }
                     }
                 }
+                this.KEY.SetState(keyState);
+                keyState = null;
             };
         window.addEventListener("gamepadconnected", e => {
             console.log("连接手柄", e.gamepad.id);
@@ -967,5 +787,190 @@ let NengeApp = new class {
     KeyboardEvent() {
         
         let SpKey = ['Escape', 'Backspace', 'Tab'];
+    }
+    ELM_ATTR = (elm,key)=>getAttribute&&elm.getAttribute(key);
+    PointerEvent() {
+        let ETYPE = ['mousedown','mouseup', 'mouseout'];
+        if ("ontouchstart" in document){
+            ETYPE = ['touchstart', 'touchmove', 'touchcancel', 'touchend'];
+        }
+        ETYPE.forEach(val=>document.addEventListener(val,(event)=>{
+            let elm = event.target,keyState={},
+                type = event.type,
+                key = elm.getAttribute('data-k'),
+                btn = elm.getAttribute('data-btn');
+            if(btn){
+                if(["mouseup","touchend"].includes(type)){
+                    btn = btn.toLowerCase();
+                    let btnkey = btn.split('-');
+                    if (btnkey[1]) this.btnMap[btnkey[0]][btnkey[1]](event);
+                    else this.btnMap[btn](event);
+                }
+                return this.stopEvent(event);
+            }else if(key){
+                if(type=='mousedown'){
+                    keyState[this.KEY.get(key)] = 1;
+                    this.KEY.SetState(keyState);
+                    return this.stopEvent(event);
+                }
+            }
+            if (event.touches && event.touches.length > 0) {
+                for (var i = 0; i < event.touches.length; i++) {
+                    var t = event.touches[i];
+                    var dom = document.elementFromPoint(t.clientX, t.clientY);
+                    if (dom) {
+                        var k = dom.getAttribute('data-k');
+                        if (!k) return;
+                        this.stopEvent(event);
+                        let index = this.KEY.get(k);
+                        if (index != undefined) {
+                            keyState[index] = 1;
+                        } else {
+                            if (k == 'ul') {
+                                keyState[5] = 1;
+                                keyState[6] = 1;
+                            } else if (k == 'ur') {
+                                keyState[4] = 1;
+                                keyState[6] = 1;
+                            } else if (k == 'dl') {
+                                keyState[5] = 1;
+                                keyState[7] = 1;
+                            } else if (k == 'dr') {
+                                keyState[4] = 1;
+                                keyState[7] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            this.KEY.SetState(keyState);
+        },{
+            'passive': false
+        }));
+        
+        ['keyup', 'keydown'].forEach(val => document.addEventListener(val, (e)=>{
+            let code = this.KEY._KeyCode[e.code];
+            if (code != undefined) {
+                this.KEY.sendState(code,e.type=='keyup'?0:1);
+            }
+        }, {
+            passive: false
+        }));
+    }
+    KEY = {
+        _NumToKey:{},
+        _KeyToNum:{},
+        _NumState:{},
+        SetState:function(obj){
+            for(let keyNum in this._NumState){
+                if(obj[keyNum]){
+                    this._NumState[keyNum] = 1;
+                    this.sendState(keyNum,1);
+                }else if(this._NumState[keyNum] !=0){
+                    this._NumState[keyNum] = 0;
+                    this.sendState(keyNum,0);
+                }
+            }
+            obj = null;
+        },
+        clearState:function(){
+            for(var i in this._NumState)this._NumState[i] = 0;
+            return {};
+        },
+        sendKey:function(key,bool){
+            this.SetState(this._KeyToNum[key.toLowerCase()],bool);
+        },
+        sendState:(key, bool)=>{
+            this.Module['cwrap']('simulate_input', 'null', ['number', 'number', 'number'])(0, key, bool)},
+        get:function(key){
+            return this._KeyToNum[key.toLowerCase()];
+        },
+        init:function(){
+            for(let i in this.KeyMap){
+                let key = this.KeyMap[i].toLowerCase();
+                this._NumToKey[i] = key;
+                this._NumState[i] = 0;
+                this._KeyToNum[key] = i;
+            }
+            this.setKeyBoard();
+        },
+        setKeyBoard:function(arr){
+            arr = arr || this.Keyboard;
+            this._KeyCode={};
+            for(let i =0;i<arr.length;i++){
+                let keycode = this.Keyboard[i];
+                this._KeyCode[keycode] = this._KeyToNum[this.KeyboardIndex[i%10]];
+
+            }
+        },
+        Keyboard:[
+            "Numpad2",
+            "Numpad1",
+            "Numpad0",
+            "NumpadDecimal",
+            "ArrowRight",
+            "ArrowLeft",
+            "ArrowUp",
+            "ArrowDown",
+            "Numpad6",
+            "Numpad3",
+            "KeyU",
+            "KeyY",
+            "KeyH",
+            "KeyJ",
+            "KeyD",
+            "KeyA",
+            "KeyW",
+            "KeyS",
+            "KeyT",
+            "KeyI",
+        ],
+        KeyboardIndex:["a", "b", "select", "start", "right", "left", 'up', 'down', 'r', 'l'],
+        KeyGamePad:{
+            0: 8, //※ A
+            1: 0, //● B
+            2: 2, //■ selete
+            3: 3, //▲ start
+            4: 'forward', //L1 LB =>L
+            5: 'switch', //R1 RB =>R
+            6: "loadstate", //L2 LT 加速
+            7: "savestate", //R2 RT 重启
+            8: null, //OPTION
+            9: null, //SHARE
+            10: null, //L L3
+            11: null, //R R3
+            12: 4, //上
+            13: 5, //下
+            14: 6, //左
+            15: 7, //右
+            16: null, //PS键
+            17: null, //触摸板按下
+        },
+        KeyMap:{
+            0: 'B',
+            1: 'Y',
+            2: 'SELECT',
+            3: 'START',
+            4: 'UP',
+            5: 'DOWN',
+            6: 'LEFT',
+            7: 'RIGHT',
+            8: 'A',
+            9: 'X',
+            10: 'L',
+            11: 'R',
+            12: 'L2',
+            13: 'R2',
+            14: 'L3',
+            15: 'R3',
+            19: 'L STICK UP',
+            18: 'L STICK DOWN',
+            17: 'L STICK LEFT',
+            16: 'L STICK RIGHT',
+            23: 'R STICK UP',
+            22: 'R STICK DOWN',
+            21: 'R STICK LEFT',
+            20: 'R STICK RIGHT'
+        }
     }
 }
