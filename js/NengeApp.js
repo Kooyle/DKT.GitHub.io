@@ -12,11 +12,8 @@ let NengeApp = new class {
     constructor() {
         this.FILE_INPUT.type = 'file';
         this.setConfig();
-        this.ConfigEvent();
-        this.KEY.init();
-        this.GAMEPAD_EVENT();
         this.initDB();
-            this.PointerEvent();
+        this.EVENT();
         return;
     }
     async installCore(result) {
@@ -27,6 +24,7 @@ let NengeApp = new class {
                 'noInitialRun': !0x0,
                 'SRM_POS': 658768,
                 'SRM_LEN': 131072,
+                'SRM_XLEN':139264,
                 'ROOM_POS': 6647264,
                 'STATE_POST': 8787512,
                 'CanvasWidth':600,
@@ -55,15 +53,16 @@ let NengeApp = new class {
                      */
                     //Module.HEAPU8.set(Module.HEAPU8.subarray(6647264, 6647264 + 16777216), 23424512)
                     //fetch('/rooms/test.gba').then(v=>v.arrayBuffer()).then(v=>{result.gba = new Uint8Array(v);this.GameName = 'test.gba';
-                    Module['FS']['createDataFile']('/', 'game.gba', result.gba, !0x0, !0x1);
-                    Module['FS']['createDataFile']('/', 'game.srm', result.srm ? result.srm : new Uint8Array(131072), !0x0, !0x1);
-                    //Module.HEAPU8.set(cb, this.Module.SRM_POS);
+                    //Module['FS']['createDataFile']('/', 'game.gba', result.gba, !0x0, !0x1);
+
                     Module['ROOM_POS'] += result.gba.length + 32;
+                    this.DATA.AddROOM(result.gba,true,result.srm);
+                    //this.DATA.AddSRM(result.srm,true);
                     Module['callMain'](['/game.gba', '2b35cacf70aef5cbb3f38c0bb20e488cc8ad0c350400499a3']);
                     Module['FS']['unlink']('/game.gba');
                     Module['FS']['unlink']('/game.srm');
                     if(result.state){
-                        this.STATE_DATA = result.state;
+                        this.DATA.STATE = result.state;
                     }
                     delete result.state;
                     delete result.srm;
@@ -104,17 +103,6 @@ let NengeApp = new class {
         if (cb) elm.onload = cb;
         document.body.appendChild(elm);
     }
-    fast_forward(bool) {
-        let Module = this.Module;
-        if (!this._fast_forward) this._fast_forward = Module['cwrap']('fast_forward', 'number', ['number']);
-        this._fast_forward(bool ? 1 : 0);
-    }
-    stopEvent(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-    }
-    Timer = {};
     btnMap = {
         'startmusic': e => {
             this.Module.startMusic();
@@ -127,17 +115,11 @@ let NengeApp = new class {
             'settings': e => {
                 let elm = e.target;
                 clearTimeout(this.Timer.settings);
+                this.btnMap['SetMenu'](!elm.classList.contains('active'));
+                elm=null;
                 this.Timer.settings = setTimeout(() => {
-                    elm.classList.toggle('active');
-                    let active = elm.classList.contains('active');
-                    let elm2 = document.querySelector('.gba-action');
-                    active ? elm2.style.left = '0px' : elm2.style.left = '';
-                    if (active) this.Timer.settings = setTimeout(() => {
-                        elm.classList.remove('active');
-                        elm2.style.left = '';
-                        elm2 = null, elm = null;
-                    }, 10000);
-                }, 200);
+                        this.btnMap['SetMenu'](0);
+                },5000);
             },
             'reset': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
@@ -146,7 +128,7 @@ let NengeApp = new class {
             'loadstate': buf => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 let readbuf = state => {
-                    this.STATE_DATA = state;
+                    this.DATA.STATE = state;
                     readbuf = null, state = null;
 
                 };
@@ -161,8 +143,8 @@ let NengeApp = new class {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 let data = {};
                 data['name'] = this.GameName;
-                data['state' + this.stateKey] = this.STATE_DATA;
-                data['stateimg' + this.stateKey] = this.SCREEN_DATA;
+                data['state' + this.stateKey] = this.DATA.STATE;
+                data['stateimg' + this.stateKey] = this.DATA.SCREEN;
                 data['statetime' + this.stateKey] = new Date();
                 this.STATE.update(this.GameName, data, this.GameName).then(
                     e => {
@@ -183,11 +165,7 @@ let NengeApp = new class {
                 this.upload(result => {
                     this.CheckFile(result, cb => {
                         if (cb instanceof Uint8Array && (cb.length == 139264 || cb.length == 1024 * 128)) {
-                            this.Module.HEAPU8.set(cb, this.Module.SRM_POS);
-                            //this.Module['FS']['createDataFile']('/', 'game.srm', cb, !0x0, !0x1);
-                            //this.Module._event_load_save_files();
-                            this.Module['cwrap']('system_restart', '', [])();
-                            //this.Module['FS']['unlink']('/game.srm');
+                            this.DATA.AddSRM(cb);
                         }
                     })
                 })
@@ -195,14 +173,14 @@ let NengeApp = new class {
             },
             'downsrm': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
-                this.download(this.SRM_DATA, this.GetName('srm'));
+                this.download(this.DATA.SRM, this.GetName('srm'));
             },
             'upstate': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 this.upload(result => {
                     this.CheckFile(result, cb => {
                         if (cb instanceof Uint8Array) {
-                            this.STATE_DATA = cb;
+                            this.DATA.STATE = cb;
                             cb=null;
                         }
                     })
@@ -211,7 +189,7 @@ let NengeApp = new class {
             },
             'downstate': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
-                this.download(this.STATE_DATA,this.GetName('state'))
+                this.download(this.DATA.STATE,this.GetName('state'))
 
             },
             'music': e => {
@@ -221,25 +199,21 @@ let NengeApp = new class {
                 return location.reload();
             },
             'cheat': async e => {
-                let result = document.querySelector('.gba-result'),
-                    HTML = '<div><textarea style="width: 100%;height: 500px;" class="gba-cheats">',
+                let HTML = '<div><textarea style="width: 100%;height: 500px;" class="gba-cheats">',
                     data = await this.ROOMS.get(this.DBKeyName);
                 if (data && data.cheat) {
                     HTML += data.cheat;
                 }
                 let ctrl = '<input value="启用" type="button" data-btn="cheat-run"> | <input value="保存并启用" type="button" data-btn="cheat-save"> | <input value="暂停" type="button" data-btn="cheat-stop">';
                 HTML += '</textarea></div>';
-                result.innerHTML = ctrl+ HTML + ctrl;
-                this.btnMap['openlist']();
-                result = null;
-
+                this.RESULT(ctrl+ HTML + ctrl);
             },
             'forward': () => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 //if(e.type != 'pointerdown') return;
                 let e = document.querySelector('.gba-forward');
                     e.classList.toggle('active');
-                    this.fast_forward(e.classList.contains('active'));
+                    this.Module['cwrap']('fast_forward', 'number', ['number'])(e.classList.contains('active')?1:0);
             },
             'switch':e=>{
                 let elm = document.querySelector('.gba-msg');
@@ -279,20 +253,16 @@ let NengeApp = new class {
         },
         'db': {
             'rooms': async e => {
-                let result = document.querySelector('.gba-result'),
-                    HTML = '';
+                let HTML = '';
                 await this.ROOMS.orderBy('time').reverse().each(data => {
                     HTML += `<div><h3>${data.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,data.img||[0]))}"><p>${data.gbaname}</p><p>${data.time.toLocaleString()}</p><input type="button" value="加载" data-btn="db-loadrooms" data-name="${data.name}"> | <input type="button" value="删除" data-btn="db-deleterooms" data-name="${data.name}"></div>`;
                 });
-                result.innerHTML = '<p><input type="button" value="上传gba" data-btn="db-uploadrooms"><br>vbanext-wasm.7z 为运行核心文件,不可删除!</p><div class="gba-result-rooms">' + HTML + '</div>';
-                this.btnMap['openlist']();
-                result = null;
+                this.RESULT('<p><input type="button" value="上传gba" data-btn="db-uploadrooms"><br>vbanext-wasm.7z 为运行核心文件,不可删除!</p><div class="gba-result-rooms">' + HTML + '</div>');
 
             },
             'state': async e => {
                 if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
-                let result = document.querySelector('.gba-result'),
-                    HTML = '',
+                let HTML = '',
                     key = 'state';
                 let states = await this.STATE.get(this.GameName);
                 if (states) {
@@ -302,41 +272,34 @@ let NengeApp = new class {
                         }
                     }
                 }
-                result.innerHTML = '<div class="gba-result-rooms">' + HTML + '</div>';
-                this.btnMap['openlist']();
-                result = null;
+                this.RESULT('<div class="gba-result-rooms">' + HTML + '</div>');
             },
-            'SetRoomDate': cb => {
+            'loadrooms': Name => {
                 if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
-                //this.Module['cwrap']('cmd_savefiles', '', [])();
+                if (Name && Name.target) {
+                    Name = Name.target, Name = Name.getAttribute('data-name');
+                }
+                if (!Name) return;
+                this.btnMap['db']['SetRoom']();
+                this.btnMap['db']['GetRoom'](Name);
+            },
+            'SetRoom': cb => {
+                if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
                 this.ROOMS.update(this.DBKeyName, {
-                    state: this.STATE_DATA,
-                    img: this.SCREEN_DATA,
-                    srm: this.SRM_DATA,
+                    state: new Uint8Array(this.DATA.STATE) ,
+                    img: new Uint8Array(this.DATA.SCREEN),
+                    srm: new Uint8Array(this.DATA.SRM),
                 }).then(update => {
-                    console.log(update);
-                    //this.Module.FS.unlink('screenshot.png');
-                    cb && cb()
-                })
+                    console.log(update?'储存成功':'存储失败!');
+                });
 
             },
-            'loadrooms': e => {
-                if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
-                if (e && e.target) {
-                    e = e.target, e = e.getAttribute('data-name');
-                }
-                if (!e) return;
-                this.btnMap['db']['SetRoomDate'](() => {
-                    this.ROOMS.get(e).then(result => {
-                        this.setRooms(result.gba, result.gbaname, result.srm);
-                        if (result.state) {
-                            this.STATE_DATA = result.state;
-                            delete result.state;
-                        }
-                        result = null;
-                    });
+            'GetRoom':Name=>{
+                this.ROOMS.get({'name':Name}).then(result => {
+                    this.GameName = result.gbaname;
+                    this.DATA.AddROOM(result.gba,false, result.srm,result.state);
+                    this.btnMap['closelist']();
                 });
-                this.btnMap['closelist']();
 
             },
             'deleterooms': e => {
@@ -400,7 +363,7 @@ let NengeApp = new class {
                         if(!result) return;
                         let state = result['state' + index];
                         if (state) {
-                            this.STATE_DATA = state;
+                            this.DATA.STATE = state;
                             state = null;
                         }
                         this.btnMap['closelist']();
@@ -413,8 +376,30 @@ let NengeApp = new class {
         },
         'openlist': e => {
             document.querySelector('.gba-list').style.display = '';
-            document.querySelector('.gba-action').style.left = '';
+            this.btnMap['SetMenu'](0);
+        },
+        'SetMenu': e => {
+            document.querySelector('.gba-action').style.cssText = e?'left:0px':'';
+            document.querySelector('.gba-settings').classList[e?'add':'remove']('active');
         }
+    }
+    RESULT(html){
+        let result = document.querySelector('.gba-result');
+        result.innerHTML = html;
+        this.btnMap['openlist']();
+        result = null;
+    }
+    MSG(str,bool){
+        let msg = document.querySelector('.gba-msg');
+        msg.innerHTML = str;
+        msg.style.display = '';
+        if(!bool){
+            clearTimeout(this.Timer.msg);
+            this.Timer.msg = setTimeout(()=>{
+                msg.style.display = none;
+                msg = null;
+            },1500)
+        }else msg = null;
     }
     upload(cb) {
         this.FILE_INPUT.onchange = E => {
@@ -440,46 +425,90 @@ let NengeApp = new class {
         a.click();
         a = null;
     }
-    setRooms(buf, name, srm) {
-        let Module = this.Module;
-        if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
-        this.GameName = name;
-        Module.pauseMainLoop();
-        Module.HEAPU8.set(new Uint8Array(buf), Module["ROOM_POS"]);
-        this.SRM_DATA = srm ? srm : new Uint8Array(131072);
-        Module._system_restart();
-        Module.resumeMainLoop();
-        buf = null;
+    DATA = new class{
+        constructor(N){
+            this.M = N;
+        }
+        get Module(){
+            return this.M.Module;
+        }
+        get cwrap(){
+            return this.M.Module.cwrap;
+        }
+        get FS(){
+            return this.M.Module.FS;
+        }
+        get HEAPU8(){
+            return this.M.Module.HEAPU8;
+        }
+        get STATE(){
+            let len = this.cwrap('get_state_info', 'string', [])().split('|');
+            if(!len[1]) return null;
+            return new Uint8Array(this.HEAPU8.subarray(len[1]>>0,(len[0]>>0)+(len[1]>>0)));
+        }
+        set STATE(state){
+            this.FS['writeFile']('/game.state', state);
+            this.cwrap('load_state', 'number', ['string', 'number'])('game.state', 0);
+            this.FS.unlink('/game.state');
+            state = null;
+        }
+        get SRM() {
+            //this.cwrap('cmd_savefiles','','')();
+            //let buf = 
+            //return this.FS.readFile('/game.');
+            return new Uint8Array(this.HEAPU8.subarray(this.Module.SRM_POS, this.Module.SRM_POS + 139264));
+            //this.FS['unlink']('/game.');
 
-    }
-    async ChangeRoom(str) {
-        let f = await fetch('/rooms/' + str),
-            buf = await f.arrayBuffer();
-        this.setRooms(buf, str);
-    }
-    get STATE_DATA() {
-        let len = this.Module['cwrap']('get_state_info', 'string', [])().split('|');
-        if(!len[1]) return null;
-        return new Uint8Array(this.Module.HEAPU8.subarray(len[1]>>0,(len[0]>>0)+(len[1]>>0)));
-    }
-    set STATE_DATA(state) {
-        this.Module['FS']['writeFile']('/game.state', state);
-        this.Module['cwrap']('load_state', 'number', ['string', 'number'])('game.state', 0);
-        this.Module.FS.unlink('/game.state');
-        state = null;
-    }
-    get SRM_DATA() {
-        return new Uint8Array(this.Module.HEAPU8.subarray(this.Module.SRM_POS, this.Module.SRM_POS + 1024 * 128));
-    }
-    set SRM_DATA(buf) {
-        return this.Module.HEAPU8.set(buf, this.Module.SRM_POS)
-    }
-    get SCREEN_DATA() {
-        this.shaderEnable=0;
-        this.Module['cwrap']('cmd_take_screenshot', '', [])();
-        this.shaderEnable=1;
-        return this.Module['FS']['readFile']('screenshot.png');
-    }
+        }
+        set SRM(buf) {
+            this.HEAPU8.set(buf?new Uint8Array(buf):new Uint8Array(139264),this.Module.SRM_POS);
+        }
+        get SCREEN() {
+            this.ShaderEnable(0);
+            this.cwrap('cmd_take_screenshot', '', [])();
+            this.ShaderEnable(1);
+            return this.FS.readFile('screenshot.png');
+        }
+        AddROOM(u8,isFile,srm,state){
+            if(isFile){
+                this.FS['createDataFile']('/', 'game.gba',new Uint8Array(u8), !0x0, !0x1);
+                this.AddSRM(srm,isFile);
+            }else{
+                this.Module.pauseMainLoop();
+                this.HEAPU8.set(new Uint8Array(u8), this.Module["ROOM_POS"]);
+                this.AddSRM(srm,isFile,state);
+            }
+            u8=null;
+        }
+        AddSRM(buf,isFile,state){
+            if(isFile){
+                this.FS.createDataFile('/', 'game.srm',buf ? new Uint8Array(buf):new Uint8Array(139264), !0x0, !0x1);
+                buf = null;
+            }else {
+                if(!state)this.HEAPU8.set(buf?new Uint8Array(buf):new Uint8Array(139264),this.Module.SRM_POS);
+                this.Module._system_restart();
+                if(state)this.STATE = new Uint8Array(state);
+                this.Module.resumeMainLoop();
+            };
+            buf = null,state=null;
+        }
+        ShaderMode(file){
+            if (!file){
+                this.FS.unlink('/shader/shader.glslp');
+            }
+            let d = String['fromCharCode'].apply(null, this.FS.readFile('/shader/' + file));
+            this.FS.writeFile('/shader/shader.glslp', d);
+        }
+        ShaderEnable(NUM){
+            this.cwrap('shader_enable', 'null', ['number'])(NUM);
+        }
+        
+        async LoadRomm(str){
+            let f = await fetch('/rooms/' + str),buf = await f.arrayBuffer();
+                this.GameName = str.split('/').pop();
+                this.AddROOM(buf);
+        }
+    }(this);
     GetName(str) {
         if (!this.GameName) this.GameName = '未知游戏.gba';
         if (!/\.gba$/.test(this.GameName)) this.GameName += '.gba';
@@ -487,23 +516,6 @@ let NengeApp = new class {
     }
     get DBKeyName() {
         return this.GameName == this.CoreGBA ? this.CoreFile.split('/').pop() : this.GameName
-    }
-    shader = {};
-    /**
-     * @param {number} int
-     */
-    set shaderEnable(NUM){
-        this.Module['cwrap']('shader_enable', 'null', ['number'])(NUM);
-    }
-    async SetShader(file) {
-        if (!file){
-            this.Module['FS']['unlink']('/shader/shader.glslp');
-            this.shaderEnable=0;
-        }
-        let d = String['fromCharCode'].apply(null, this.Module['FS']['readFile']('/shader/' + file));
-        console.log(d);
-        this.Module['FS']['writeFile']('/shader/shader.glslp', d);
-        this.shaderEnable=1;
     }
     async initDB() {
         const DB = new Dexie('NengeNet_VBA-Next');
@@ -656,38 +668,31 @@ let NengeApp = new class {
         }
     }
     setConfig(data) {
-        this.config = localStorage.getItem('vba-next-config');
-        this.config = this.config ? JSON.parse(this.config) : {};
+        let config = localStorage.getItem('vba-next-config');
+        config = config ? JSON.parse(config) : {};
         if (data) {
             for (let j in data) {
-                this.config[j] = data[j]
+                config[j] = data[j]
             }
-            localStorage.setItem('vba-next-config', JSON.stringify(this.config));
+            localStorage.setItem('vba-next-config', JSON.stringify(config));
         }
-        for (let i in this.config) {
-            this[i] = this.config[i];
+        for (let i in config) {
+            this[i] = config[i];
         }
-    }
-    ConfigEvent() {
         document.getElementsByName('state').forEach(val => {
-            if (val.value == this.config['stateKey']) {
+            if (val.value == this['stateKey']) {
                 val.checked = true;
-            }
-            val.onchange = e => {
-                let v = e.target.value;
-                this.setConfig({
-                    'stateKey': parseInt(v)
-                });
-            }
-        });
-        document['addEventListener']('visibilitychange',()=>{
-            if (!this.Module || !this.Module.noExitRuntime || Module.MusicNeedRun) return;
-            if('hidden' === document['visibilityState']){
-                this.Module.pauseMainLoop();
-                console.log('模拟器隐藏中');
             }else{
-                this.Module.resumeMainLoop();
-                console.log('模拟器激活中');
+                val.checked = false;
+            }
+            if(!val.c){
+                val.onchange = e => {
+                    let v = e.target.value;
+                    this.setConfig({
+                        'stateKey': parseInt(v)
+                    });
+                };
+                val.c=true;
             }
         });
     }
@@ -712,11 +717,10 @@ let NengeApp = new class {
             }
         }
     }
-    sendKey = (key, bool) => this.Module['cwrap']('simulate_input', 'null', ['number', 'number', 'number'])(0, key, bool);
     GAMEPAD_EVENT() {
             this.GAMEPAD_EVENT_RUN = () => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
-                let GamePads = navigator.getGamepads(),keyState= {};
+                let GamePads = navigator.getGamepads(),keyState;
                 for (let GamePadId = 0; GamePadId < GamePads.length; GamePadId++) {
                     let Gamepad = GamePads[GamePadId];
                     if (Gamepad && Gamepad.connected) {
@@ -731,7 +735,10 @@ let NengeApp = new class {
                             //value 越大压力越强
                                 let MapTemp = this.KEY.KeyGamePad[btnid];                                    
                                 if(typeof MapTemp == 'number'){
-                                    Buttons[btnid].value > 0.5&&(keyState[MapTemp] = 1);
+                                    if(Buttons[btnid].value > 0.5){
+                                        if(!keyState)keyState = {};
+                                        keyState[MapTemp] = 1;
+                                    }
                                 }else if(Buttons[btnid].value > 0.8){
                                     if(typeof MapTemp == 'string'&&this.btnMap['do'][MapTemp]){
                                     clearTimeout(this.Timer[MapTemp]);
@@ -755,9 +762,13 @@ let NengeApp = new class {
                             //axeid%2 1上下
                             if (axeS != 0) {
                                 if (axeid % 2 == 0) {
+                                    
+                                    if(!keyState)keyState = {};
                                    axeS+5==6 ? (keyState[6]=1) :(keyState[7]=1)
                                     //console.log(axeS+5);
                                 } else if (axeid % 2 == 1) {
+                                    
+                                    if(!keyState)keyState = {};
                                     axeS+3==4?(keyState[4]=1):(keyState[5]=1)
                                     //console.log(axeS+3);
                                     //上下
@@ -766,7 +777,13 @@ let NengeApp = new class {
                         }
                     }
                 }
-                this.KEY.SetState(keyState);
+                if(keyState){
+                    this.KEY.SetState(keyState);
+                    this.Timer.gamepad = keyState;
+                }else if(this.Timer.gamepad){
+                    this.Timer.gamepad = null;
+                    this.KEY.SetState({});
+                }
                 keyState = null;
             };
         window.addEventListener("gamepadconnected", e => {
@@ -784,12 +801,16 @@ let NengeApp = new class {
             this.GAMEPAD_OPEN = false;
         });
     }
-    KeyboardEvent() {
-        
-        let SpKey = ['Escape', 'Backspace', 'Tab'];
-    }
     ELM_ATTR = (elm,key)=>getAttribute&&elm.getAttribute(key);
-    PointerEvent() {
+    stopEvent(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+    Timer = {};
+    EVENT() {
+        this.KEY.init();
+        this.GAMEPAD_EVENT();
         let ETYPE = ['mousedown','mouseup', 'mouseout'];
         if ("ontouchstart" in document){
             ETYPE = ['touchstart', 'touchmove', 'touchcancel', 'touchend'];
@@ -827,7 +848,7 @@ let NengeApp = new class {
                             keyState[index] = 1;
                         } else {
                             if (k == 'ul') {
-                                keyState[5] = 1;
+                                keyState[4] = 1;
                                 keyState[6] = 1;
                             } else if (k == 'ur') {
                                 keyState[4] = 1;
@@ -836,7 +857,7 @@ let NengeApp = new class {
                                 keyState[5] = 1;
                                 keyState[7] = 1;
                             } else if (k == 'dr') {
-                                keyState[4] = 1;
+                                keyState[5] = 1;
                                 keyState[7] = 1;
                             }
                         }
@@ -856,6 +877,18 @@ let NengeApp = new class {
         }, {
             passive: false
         }));
+        document.addEventListener('visibilitychange',()=>{
+            if (!this.Module || !this.Module.noExitRuntime || Module.runMusic) return;
+            if('hidden' === document['visibilityState']){
+                this.Module.pauseMainLoop();
+                console.log('模拟器隐藏中');
+            }else{
+                this.Module.resumeMainLoop();
+                console.log('模拟器激活中');
+            }
+        },{
+            passive: false
+        });
     }
     KEY = {
         _NumToKey:{},
@@ -877,8 +910,9 @@ let NengeApp = new class {
             for(var i in this._NumState)this._NumState[i] = 0;
             return {};
         },
-        sendKey:function(key,bool){
-            this.SetState(this._KeyToNum[key.toLowerCase()],bool);
+        SendKey:function(key,bool){
+            key = this._KeyToNum[key.toLowerCase()];
+            if(key != undefined)this.SetState(key,bool);
         },
         sendState:(key, bool)=>{
             this.Module['cwrap']('simulate_input', 'null', ['number', 'number', 'number'])(0, key, bool)},
