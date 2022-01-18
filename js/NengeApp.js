@@ -113,17 +113,12 @@ let NengeApp = new class {
         },
         'do': {
             'settings': e => {
-                let elm = e.target;
-                clearTimeout(this.Timer.settings);
-                this.btnMap['SetMenu'](!elm.classList.contains('active'));
-                elm=null;
-                this.Timer.settings = setTimeout(() => {
-                        this.btnMap['SetMenu'](0);
-                },5000);
+                this.btnMap['SetMenu'](1);
             },
             'reset': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 this.Module['cwrap']('system_restart', '', [])();
+                this.btnMap['SetMenu'](0);
             },
             'loadstate': buf => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
@@ -137,6 +132,7 @@ let NengeApp = new class {
                     let state = result['state' + this.stateKey];
                     if (state) readbuf(state);
                 });
+                this.btnMap['SetMenu'](0);
 
             },
             'savestate': e => {
@@ -146,6 +142,7 @@ let NengeApp = new class {
                 data['state' + this.stateKey] = this.DATA.STATE;
                 data['stateimg' + this.stateKey] = this.DATA.SCREEN;
                 data['statetime' + this.stateKey] = new Date();
+                this.btnMap['SetMenu'](0);
                 this.STATE.update(this.GameName, data, this.GameName).then(
                     e => {
                         if (!e) {
@@ -162,6 +159,7 @@ let NengeApp = new class {
             },
             'upsrm': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
+                this.btnMap['SetMenu'](0);
                 this.upload(result => {
                     this.CheckFile(result, cb => {
                         if (cb instanceof Uint8Array && (cb.length == 139264 || cb.length == 1024 * 128)) {
@@ -173,10 +171,12 @@ let NengeApp = new class {
             },
             'downsrm': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
+                this.btnMap['SetMenu'](0);
                 this.download(this.DATA.SRM, this.GetName('srm'));
             },
             'upstate': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
+                this.btnMap['SetMenu'](0);
                 this.upload(result => {
                     this.CheckFile(result, cb => {
                         if (cb instanceof Uint8Array) {
@@ -189,13 +189,15 @@ let NengeApp = new class {
             },
             'downstate': e => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
-                this.download(this.DATA.STATE,this.GetName('state'))
+                this.btnMap['SetMenu'](0);
+                this.download(this.DATA.STATE,this.GetName('state'));
 
             },
             'music': e => {
                 this.setConfig({
                     "runMusic": this.runMusic == true ? false : true
                 });
+                this.btnMap['SetMenu'](0);
                 return location.reload();
             },
             'cheat': async e => {
@@ -207,13 +209,15 @@ let NengeApp = new class {
                 let ctrl = '<input value="启用" type="button" data-btn="cheat-run"> | <input value="保存并启用" type="button" data-btn="cheat-save"> | <input value="暂停" type="button" data-btn="cheat-stop">';
                 HTML += '</textarea></div>';
                 this.RESULT(ctrl+ HTML + ctrl);
+                this.btnMap['SetMenu'](0);
             },
             'forward': () => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 //if(e.type != 'pointerdown') return;
-                let e = document.querySelector('.gba-forward');
+                let e = document.querySelector('input[data-btn=do-forward]');
                     e.classList.toggle('active');
                     this.Module['cwrap']('fast_forward', 'number', ['number'])(e.classList.contains('active')?1:0);
+                    this.btnMap['SetMenu'](0);
             },
             'switch':e=>{
                 let elm = document.querySelector('.gba-msg');
@@ -225,7 +229,45 @@ let NengeApp = new class {
                 elm.style.display = '';
                 setTimeout(()=>{
                     elm.style.display = 'none';
-                },1000)
+                },1000);
+            },
+            'fanyi':e=>{
+                let img64 = window.btoa(String.fromCharCode.apply(null,this.DATA.SCREEN)),
+                    p = new FormData(),
+                    str = 'Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=auto&Target=zh&ProjectId=0&Version=2018-03-21'.split('&');
+                    for(let i=0;i<str.length;i++){
+                        let s = str[i].split('=');
+                        //p.append(s[0],s[1]);
+                    }
+                    p.append('image',img64);
+                    //'http://ztranslate.net/service?api_key=E4F1GW8S3D&target_lang=Zh&source_lang=En&mode=Fast&output=txt'
+                    // JSON.stringify({image:img64})
+                fetch(
+                    new Request('http://ztranslate.net/service?api_key=E4F1GW8S3D&target_lang=Zh&source_lang=En&mode=Fast&output=txt', {
+                        'method':'POST',
+                        'headers': {
+                            //'Content-Type':'multipart/formdata'
+                        },
+                        'body': JSON.stringify({image:img64})
+                    })).then(v=>v.json()).then(
+                        v=>{
+                            this.MSG('<img src="data:image/jpeg;base64,'+v.image+'">',true)
+                        }
+                    ).catch(e=>{
+                        alert('很遗憾!翻译功能要跨域!');
+                    });
+                //https://tmt.tencentcloudapi.com/?Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=zh&Target=en&ProjectId=0
+
+            },
+            'downscreen':e=>{
+                this.download(this.DATA.SCREEN,this.GetName('png'));
+                this.btnMap['closemenu']();
+            },
+            'shader':e=>{
+                let sharder = e.target.getAttribute('data-sharder');
+                e.target.classList.toggle('active');
+                this.DATA.ShaderMode(sharder);
+                this.btnMap['closemenu']();
             }
         },
         'cheat':{
@@ -254,6 +296,7 @@ let NengeApp = new class {
         'db': {
             'rooms': async e => {
                 let HTML = '';
+                this.btnMap['SetMenu'](0);
                 await this.ROOMS.orderBy('time').reverse().each(data => {
                     HTML += `<div><h3>${data.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,data.img||[0]))}"><p>${data.gbaname}</p><p>${data.time.toLocaleString()}</p><input type="button" value="加载" data-btn="db-loadrooms" data-name="${data.name}"> | <input type="button" value="删除" data-btn="db-deleterooms" data-name="${data.name}"></div>`;
                 });
@@ -262,6 +305,7 @@ let NengeApp = new class {
             },
             'state': async e => {
                 if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
+                this.btnMap['SetMenu'](0);
                 let HTML = '',
                     key = 'state';
                 let states = await this.STATE.get(this.GameName);
@@ -372,15 +416,17 @@ let NengeApp = new class {
             }
         },
         'closelist': e => {
-            document.querySelector('.gba-list').style.display = 'none';
+            document.querySelector('.gba-list').style.cssText = '';
         },
         'openlist': e => {
-            document.querySelector('.gba-list').style.display = '';
+            document.querySelector('.gba-list').style.cssText = 'top:0px';
+            this.btnMap['SetMenu'](0);
+        },
+        'closemenu': e => {
             this.btnMap['SetMenu'](0);
         },
         'SetMenu': e => {
-            document.querySelector('.gba-action').style.cssText = e?'left:0px':'';
-            document.querySelector('.gba-settings').classList[e?'add':'remove']('active');
+            document.querySelector('.gba-action').style.cssText = e?'top:10%':'';
         }
     }
     RESULT(html){
@@ -464,9 +510,9 @@ let NengeApp = new class {
             this.HEAPU8.set(buf?new Uint8Array(buf):new Uint8Array(139264),this.Module.SRM_POS);
         }
         get SCREEN() {
-            this.ShaderEnable(0);
+            //this.ShaderEnable(0);
             this.cwrap('cmd_take_screenshot', '', [])();
-            this.ShaderEnable(1);
+            //this.ShaderEnable();
             return this.FS.readFile('screenshot.png');
         }
         AddROOM(u8,isFile,srm,state){
@@ -493,13 +539,19 @@ let NengeApp = new class {
             buf = null,state=null;
         }
         ShaderMode(file){
-            if (!file){
-                this.FS.unlink('/shader/shader.glslp');
+            if(this.ShaderMode_file == file){
+                this.ShaderMode_file = null;
+                this.ShaderEnable(0);
+                return ;
             }
+            this.ShaderMode_file = file;
             let d = String['fromCharCode'].apply(null, this.FS.readFile('/shader/' + file));
+            console.log(d);
             this.FS.writeFile('/shader/shader.glslp', d);
+            this.ShaderEnable(1);
         }
         ShaderEnable(NUM){
+            if(NUM == undefined)NUM = this.ShaderMode_file ? 1:0;
             this.cwrap('shader_enable', 'null', ['number'])(NUM);
         }
         

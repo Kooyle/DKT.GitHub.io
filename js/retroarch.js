@@ -8440,6 +8440,7 @@ var EmulatorJS = (function () {
         }
   
         function _emscripten_memcpy_big(dest, src, num) {
+          console.log(`${dest}--->${src}~${num}`);
           HEAPU8.set(HEAPU8.subarray(src, src + num), dest)
         }
   
