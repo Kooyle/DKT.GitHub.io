@@ -117,16 +117,18 @@
             justify-content: space-between;
             align-items: center;
         }
-
-        .gba-body input[type=button] {
+        button[data-btn],
+        input[data-btn] {
             background-image: linear-gradient(180deg, #3fadfb, #2196f3b5, #2196f3);
             border: 1px solid;
             font-size: 12px;
             border-radius: 5px;
             padding: 2px;
-            margin: 15px 0px;
+            margin: 10px 0px;
+            font-weight: 400;
         }
-        .gba-body input.active{
+        button[data-btn].active,
+        input[type=button].active{
             background-image:linear-gradient(180deg, #f70a0a, #d54d0cb5, #d5731e);
             color: #FFF;
 
@@ -455,21 +457,27 @@
         <canvas class="gba-pic" width="600" height="400"></canvas>
         <div class="gba-action gba-flex">
             <div class="gba-action-top gba-flex">
-                <input type="button" value="游戏数据" data-btn="db-rooms">
-                <input type="button" value="状态数据" data-btn="db-state">
-                <input type="button" value="下载截图" data-btn="do-downscreen">
-                <input type="button" value="关闭菜单" data-btn="closemenu">
+                <button type="button" data-btn="db-rooms">游戏数据</button>
+                <button type="button" data-btn="db-state">状态数据</button>
+                <button type="button" data-btn="do-downscreen">下载截图</button>
+                <button type="button" data-btn="closemenu">关闭菜单</button>
             </div>
             <div class="gba-action-top gba-flex">
-                <input type="button" value="重启" data-btn="do-reset">
-                <input type="button" value="加速" data-btn="do-forward">
-                <input type="button" value="作弊" data-btn="do-cheat">
-                <input type="button" value="音乐" data-btn="do-music">
+                <button type="button" data-btn="do-reset">重启游戏</button>
+                <button type="button" data-btn="do-forward">加速游戏</button>
+                <button type="button" data-btn="do-cheat">作弊代码</button>
+                <button type="button" data-btn="do-music">音乐开关</button>
             </div>
-            <div class="gba-action-op">SRM电子存档:
-                <input type="button" value="上传" data-btn="do-upsrm">&nbsp;&nbsp;&nbsp;<input type="button" value="下载" data-btn="do-downsrm"></div>
-                <div class="gba-action-op">STATE即时存档:
-                    <input type="button" value="上传" data-btn="do-upstate">&nbsp;&nbsp;&nbsp;<input type="button" value="下载" data-btn="do-downstate"></div>
+            <div class="gba-action-top gba-flex">
+                <button type="button" data-btn="db-uploadrooms">上传游戏</button>
+                <button type="button" data-btn="db-saverooms">保存ROOM</button>
+                <button type="button" data-btn="do-translate">翻译API</button>
+                <button type="button" data-btn="do-getinfo">信息下载</button>
+            </div>
+            <div class="gba-action-op">电子存档:
+                <button type="button" data-btn="do-upsrm">上传</button>&nbsp;&nbsp;&nbsp;<button type="button" data-btn="do-downsrm">下载</button></div>
+                <div class="gba-action-op">即时存档:
+                    <button type="button" data-btn="do-upstate">上传</button>&nbsp;&nbsp;&nbsp;<button type="button" data-btn="do-downstate">下载</button></div>
             <div class="gba-action-top gba-flex">
                 <h3>档位</h3>
                 <label><input type="radio" name="state" value="0" checked>位置0</label>
@@ -484,34 +492,21 @@
             </div>
             <div class="gba-action-top gba-flex">
                 <h3>屏幕</h3>
-                <label><input type="button" data-btn="do-shader" data-sharder="2xScaleHQ.glslp" value="2倍柔化"></label>
+                <button type="button" data-btn="do-shader" data-sharder="2xScaleHQ.glsl">2倍柔化</button>
                 
-                    <label><input type="button" data-btn="do-shader" data-sharder="4xScaleHQ.glslp" value="4倍柔化"></label>
+                    <button type="button" data-btn="do-shader" data-sharder="4xScaleHQ.glsl">4倍柔化</button>
                 
-                    <label><input type="button" data-btn="do-shader" data-sharder="crt-aperture.glslp" value="CRT模式"></label>
+                    <button type="button" data-btn="do-shader" data-sharder="crt-aperture.glsl">CRT模式</button>
                 
-                    <label><input type="button" data-btn="do-shader" data-sharder="crt-easymode.glslp" value="CRT简化"></label>
+                    <button type="button" data-btn="do-shader" data-sharder="crt-easymode.glsl">CRT简化</button>
                 
-                    <label><input type="button" data-btn="do-shader" data-sharder="crt-geom.glslp" value="CRT模糊"></label>
+                    <button type="button" data-btn="do-shader" data-sharder="crt-geom.glsl">CRT模糊</button>
             </div>
             
         </div>
         <div class="gba-list">
             <h3 data-btn="closelist">点击这里关闭</h3>
             <div class="gba-result"></div>
-            <div class="gba-db-list">
-                <h3>说明</h3>
-                <div>在运行游戏的时候上传存档,只会在内存中，需要自己保存才会储存下来。上传压缩包ZIP/RAR4/7Z会直接保存里面的文件.如果RAR中有密码可在这里输入RAR密码：<input type="text"
-                        value="" class="gba-rar-pass">后上传！</div>这是临时数据库更换:
-                <input type="button" data-btn="changeDB" value="DB1"> |
-                <input type="button" data-btn="changeDB" value="DB2"> |
-                <input type="button" data-btn="changeDB" value="DB3">
-                <div>点击可切换数据库,找回之前的存档.长传存档直接上传含有".srm"的文件即可.</div>
-            </div>
-            <ul class="gba-list-file"></ul>
-            <div class="gba-list-tips">Worker 修改版，原作：<a target="_blank"
-                    href="https://github.com/44670/vba-next-wasm">https://github.com/44670/vba-next-wasm</a><br>启用RTC方法，运行蓝宝石/绿宝石，然后运行中切换回你的游戏，如火红改版。<br>RTC启用成功！
-            </div>
             <div class="gba-list-ctrl"></div>
             <div class="gba-list-pad">
                 <h3>手柄参数,基于我的廉价PS4手柄（百元不到）</h3>
@@ -564,6 +559,8 @@
             <div class="vk vk-hide" data-k="dr"></div>
         </div>
     </div>
+    <script src="js/md5.js"></script><!-- v2 -->
+    <!--<script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>-->
     <script src="js/dexie.min.js"></script>
     <script src="js/retroarch.js"></script>
     <script src="/js/NengeApp.js"></script>

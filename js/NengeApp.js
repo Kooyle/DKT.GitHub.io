@@ -206,7 +206,7 @@ let NengeApp = new class {
                 if (data && data.cheat) {
                     HTML += data.cheat;
                 }
-                let ctrl = '<input value="启用" type="button" data-btn="cheat-run"> | <input value="保存并启用" type="button" data-btn="cheat-save"> | <input value="暂停" type="button" data-btn="cheat-stop">';
+                let ctrl = '<button type="button" data-btn="cheat-run">启用</button> | <button type="button" data-btn="cheat-save">保存并启用</button> | <button type="button" data-btn="cheat-stop">暂停</button>';
                 HTML += '</textarea></div>';
                 this.RESULT(ctrl+ HTML + ctrl);
                 this.btnMap['SetMenu'](0);
@@ -214,7 +214,7 @@ let NengeApp = new class {
             'forward': () => {
                 if (!this.Module || !this.Module.noExitRuntime) return;
                 //if(e.type != 'pointerdown') return;
-                let e = document.querySelector('input[data-btn=do-forward]');
+                let e = document.querySelector('[data-btn=do-forward]');
                     e.classList.toggle('active');
                     this.Module['cwrap']('fast_forward', 'number', ['number'])(e.classList.contains('active')?1:0);
                     this.btnMap['SetMenu'](0);
@@ -231,7 +231,51 @@ let NengeApp = new class {
                     elm.style.display = 'none';
                 },1000);
             },
+            'downscreen':e=>{
+                this.download(this.DATA.SCREEN,this.GetName('png'));
+                this.btnMap['closemenu']();
+            },
+            'shader':e=>{
+                if(e&&e.target)e.target.classList.toggle('active');
+                this.DATA.SHADER = [];
+                document.querySelectorAll('[data-btn="do-shader"]').forEach(
+                    val=>{
+                        if(val.classList.contains('active'))this.DATA.SHADER.push(val.getAttribute('data-sharder'));
+                    }
+                );
+                this.DATA.SetShader();
+                this.btnMap['closemenu']();
+            },
             'fanyi':e=>{
+                /**
+                 * <script type="text/javascript">
+var appid = '20220119001059108';
+var key = '6ANW8_VFJP_VYlGiKZhp';
+var salt = (new Date).getTime();
+var query = 'apple';
+// 多个query可以用\n连接  如 query='apple\norange\nbanana\npear'
+var from = 'en';
+var to = 'zh';
+var str1 = appid + query + salt +key;
+var sign = MD5(str1);
+$.ajax({
+    url: 'http://api.fanyi.baidu.com/api/trans/vip/translate',
+    type: 'get',
+    dataType: 'jsonp',
+    data: {
+        q: query,
+        appid: appid,
+        salt: salt,
+        from: from,
+        to: to,
+        sign: sign
+    },
+    success: function (data) {
+        console.log(data);
+    } 
+});
+
+                 */
                 let img64 = window.btoa(String.fromCharCode.apply(null,this.DATA.SCREEN)),
                     p = new FormData(),
                     str = 'Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=auto&Target=zh&ProjectId=0&Version=2018-03-21'.split('&');
@@ -258,16 +302,6 @@ let NengeApp = new class {
                     });
                 //https://tmt.tencentcloudapi.com/?Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=zh&Target=en&ProjectId=0
 
-            },
-            'downscreen':e=>{
-                this.download(this.DATA.SCREEN,this.GetName('png'));
-                this.btnMap['closemenu']();
-            },
-            'shader':e=>{
-                let sharder = e.target.getAttribute('data-sharder');
-                e.target.classList.toggle('active');
-                this.DATA.ShaderMode(sharder);
-                this.btnMap['closemenu']();
             }
         },
         'cheat':{
@@ -298,9 +332,9 @@ let NengeApp = new class {
                 let HTML = '';
                 this.btnMap['SetMenu'](0);
                 await this.ROOMS.orderBy('time').reverse().each(data => {
-                    HTML += `<div><h3>${data.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,data.img||[0]))}"><p>${data.gbaname}</p><p>${data.time.toLocaleString()}</p><input type="button" value="加载" data-btn="db-loadrooms" data-name="${data.name}"> | <input type="button" value="删除" data-btn="db-deleterooms" data-name="${data.name}"></div>`;
+                    HTML += `<div><h3>${data.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,data.img||[0]))}"><p>${data.gbaname}</p><p>${data.time.toLocaleString()}</p><button type="button" data-btn="db-loadrooms" data-name="${data.name}">加载</button> | <button type="button" data-btn="db-deleterooms" data-name="${data.name}">删除</button> | <button type="button" data-btn="db-downrooms" data-name="${data.name}">下载</button></div>`;
                 });
-                this.RESULT('<p><input type="button" value="上传gba" data-btn="db-uploadrooms"><br>vbanext-wasm.7z 为运行核心文件,不可删除!</p><div class="gba-result-rooms">' + HTML + '</div>');
+                this.RESULT('<p><button type="button" data-btn="db-uploadrooms">上传gba</button><br>vbanext-wasm.7z 为运行核心文件,不可删除!</p><div class="gba-result-rooms">' + HTML + '</div>');
 
             },
             'state': async e => {
@@ -312,7 +346,7 @@ let NengeApp = new class {
                 if (states) {
                     for (let index = 0; index < 5; index++) {
                         if (states[key + index]) {
-                            HTML += `<div><h3>${states.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,states[key+'img'+index]||[0]))}"><p>存档位置:${index}</p><p>${states[key+'time'+index].toLocaleString()}</p><input type="button" value="读取" data-btn="db-loadstate" data-index="${index}"> | <input type="button" value="下载" data-btn="db-downstate" data-index="${index}"></div>`;
+                            HTML += `<div><h3>${states.name}</h3><img src="data:image/jpeg;base64,${window.btoa(String.fromCharCode.apply(null,states[key+'img'+index]||[0]))}"><p>存档位置:${index}</p><p>${states[key+'time'+index].toLocaleString()}</p><button type="button" data-btn="db-loadstate" data-index="${index}">读取</button> | <button type="button" data-btn="db-downstate" data-index="${index}">下载</button></div>`;
                         }
                     }
                 }
@@ -324,8 +358,34 @@ let NengeApp = new class {
                     Name = Name.target, Name = Name.getAttribute('data-name');
                 }
                 if (!Name) return;
-                this.btnMap['db']['SetRoom']();
+                ///this.btnMap['db']['SetRoom']();
                 this.btnMap['db']['GetRoom'](Name);
+            },
+            'deleterooms': e => {
+                let elm = e.target,
+                    name = elm.getAttribute('data-name');
+                this.ROOMS.delete(name).then(result => {
+                    console.log(result);
+                    this.btnMap['db']['rooms']();
+                });
+
+            },
+            'downrooms':e=>{
+                let elm = e.target,
+                    name = elm.getAttribute('data-name');
+                    if(name == "vbanext-wasm.7z") location.href = "https://github.com/nenge123/vba_next_wasm";
+                    this.ROOMS.get({'name':name}).then(result => {
+                        if(result.gba)this.download(result.gba,result.gbaname);
+                        if(result.srm)this.download(result.srm,result.gbaname.replace('.gba','.srm'));
+                        if(result.state)this.download(result.state,result.gbaname.replace('.gba','.state'));
+                        //this.btnMap['closelist']();
+                    });
+            },
+            'saverooms':e=>{
+                this.btnMap['db']['SetRoom'](update=>{
+                    this.btnMap['closemenu']();
+                    this.MSG('<button data-btn="">'+(update?'储存成功':'存储失败!')+'</button>');
+                });
             },
             'SetRoom': cb => {
                 if (!this.Module || !this.Module.noExitRuntime) return alert('模拟器必须先启动!');
@@ -335,23 +395,15 @@ let NengeApp = new class {
                     srm: new Uint8Array(this.DATA.SRM),
                 }).then(update => {
                     console.log(update?'储存成功':'存储失败!');
+                    cb&&cb(update);
                 });
 
             },
-            'GetRoom':Name=>{
-                this.ROOMS.get({'name':Name}).then(result => {
+            'GetRoom':name=>{
+                this.ROOMS.get({'name':name}).then(result => {
                     this.GameName = result.gbaname;
                     this.DATA.AddROOM(result.gba,false, result.srm,result.state);
                     this.btnMap['closelist']();
-                });
-
-            },
-            'deleterooms': e => {
-                let elm = e.target,
-                    name = elm.getAttribute('data-name');
-                this.ROOMS.delete(name).then(result => {
-                    console.log(result);
-                    this.btnMap['db']['rooms']();
                 });
 
             },
@@ -442,7 +494,7 @@ let NengeApp = new class {
         if(!bool){
             clearTimeout(this.Timer.msg);
             this.Timer.msg = setTimeout(()=>{
-                msg.style.display = none;
+                msg.style.display = "none";
                 msg = null;
             },1500)
         }else msg = null;
@@ -538,23 +590,29 @@ let NengeApp = new class {
             };
             buf = null,state=null;
         }
-        ShaderMode(file){
-            if(this.ShaderMode_file == file){
-                this.ShaderMode_file = null;
-                this.ShaderEnable(0);
-                return ;
+        SHADER = [];
+        SHADER_MODE = {
+            "2xScaleHQ.glsl":['false','source'],
+            "4xScaleHQ.glsl":['false','source'],
+            "crt-aperture.glsl":['false','source'],
+            "crt-easymode.glsl":['false','source'],
+            "crt-geom.glsl":['false','source']
+        }
+        SetShader(){
+            let str = 'shaders = ' + this.SHADER.length+'\n';
+            for(let i = 0;i<this.SHADER.length;i++){
+                let shader = this.SHADER[i];
+                str +=  `shader${i} = "${shader}"\n`
+                        +`filter_linear${i} = ${this.SHADER_MODE[shader][1]}\n`
+                        +`scale_type_${i} = ${this.SHADER_MODE[shader][2]}\n`;
             }
-            this.ShaderMode_file = file;
-            let d = String['fromCharCode'].apply(null, this.FS.readFile('/shader/' + file));
-            console.log(d);
-            this.FS.writeFile('/shader/shader.glslp', d);
-            this.ShaderEnable(1);
+            this.FS.writeFile('/shader/shader.glslp',str);
+            this.ShaderEnable(this.SHADER.length>0?1:0);
         }
         ShaderEnable(NUM){
-            if(NUM == undefined)NUM = this.ShaderMode_file ? 1:0;
+            if(NUM == undefined)NUM = this.SHADER.length>0 ? 1:0;
             this.cwrap('shader_enable', 'null', ['number'])(NUM);
         }
-        
         async LoadRomm(str){
             let f = await fetch('/rooms/' + str),buf = await f.arrayBuffer();
                 this.GameName = str.split('/').pop();
@@ -881,40 +939,36 @@ let NengeApp = new class {
                 }
                 return this.stopEvent(event);
             }else if(key){
-                if(type=='mousedown'){
-                    keyState[this.KEY.get(key)] = 1;
-                    this.KEY.SetState(keyState);
-                    return this.stopEvent(event);
-                }
-            }
-            if (event.touches && event.touches.length > 0) {
-                for (var i = 0; i < event.touches.length; i++) {
-                    var t = event.touches[i];
-                    var dom = document.elementFromPoint(t.clientX, t.clientY);
-                    if (dom) {
-                        var k = dom.getAttribute('data-k');
-                        if (!k) return;
-                        this.stopEvent(event);
-                        let index = this.KEY.get(k);
-                        if (index != undefined) {
-                            keyState[index] = 1;
-                        } else {
-                            if (k == 'ul') {
-                                keyState[4] = 1;
-                                keyState[6] = 1;
-                            } else if (k == 'ur') {
-                                keyState[4] = 1;
-                                keyState[6] = 1;
-                            } else if (k == 'dl') {
-                                keyState[5] = 1;
-                                keyState[7] = 1;
-                            } else if (k == 'dr') {
-                                keyState[5] = 1;
-                                keyState[7] = 1;
+                if (event.touches && event.touches.length > 0) {
+                    for (var i = 0; i < event.touches.length; i++) {
+                        var t = event.touches[i];
+                        var k = document.elementFromPoint(t.pageX, t.pageY).getAttribute('data-k');
+                        if (k) {
+                            let index = this.KEY.get(k);
+                            if (index != undefined) {
+                                keyState[index] = 1;
+                            } else {
+                                if (k == 'ul') {
+                                    keyState[4] = 1;
+                                    keyState[6] = 1;
+                                } else if (k == 'ur') {
+                                    keyState[4] = 1;
+                                    keyState[6] = 1;
+                                } else if (k == 'dl') {
+                                    keyState[5] = 1;
+                                    keyState[7] = 1;
+                                } else if (k == 'dr') {
+                                    keyState[5] = 1;
+                                    keyState[7] = 1;
+                                }
                             }
                         }
                     }
-                }
+                }else if(type=='mousedown'){
+                    keyState[this.KEY.get(key)] = 1;
+                    this.KEY.SetState(keyState);
+                    return this.stopEvent(event);
+                } 
             }
             this.KEY.SetState(keyState);
         },{
