@@ -246,77 +246,48 @@ let NengeApp = new class {
                 this.DATA.SetShader();
                 this.btnMap['closemenu']();
             },
-            'fanyi':e=>{
-
-                /**
-                 * <script type="text/javascript">
-var appid = '20220119001059108';
-var key = '6ANW8_VFJP_VYlGiKZhp';
-var salt = (new Date).getTime();
-var query = 'apple';
-// 多个query可以用\n连接  如 query='apple\norange\nbanana\npear'
-var from = 'en';
-var to = 'zh';
-var str1 = appid + query + salt +key;
-var sign = MD5(str1);
-$.ajax({
-    url: 'http://api.fanyi.baidu.com/api/trans/vip/translate',
-    type: 'get',
-    dataType: 'jsonp',
-    data: {
-        q: query,
-        appid: appid,
-        salt: salt,
-        from: from,
-        to: to,
-        sign: sign
-    },
-    success: function (data) {
-        console.log(data);
-    } 
-});
-
-                 */
-                let img64 = window.btoa(String.fromCharCode.apply(null,this.DATA.SCREEN)),
-                    p = new FormData(),
-                    str = 'Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=auto&Target=zh&ProjectId=0&Version=2018-03-21'.split('&');
-                    for(let i=0;i<str.length;i++){
-                        let s = str[i].split('=');
-                        //p.append(s[0],s[1]);
-                    }
-                    p.append('image',img64);
-                    //'http://ztranslate.net/service?api_key=E4F1GW8S3D&target_lang=Zh&source_lang=En&mode=Fast&output=txt'
-                    // JSON.stringify({image:img64})
-                fetch(
-                    new Request('http://ztranslate.net/service?api_key=E4F1GW8S3D&target_lang=Zh&source_lang=En&mode=Fast&output=txt', {
-                        'method':'POST',
-                        'headers': {
-                            //'Content-Type':'multipart/formdata'
-                        },
-                        'body': JSON.stringify({image:img64})
-                    })).then(v=>v.json()).then(
-                        v=>{
-                            this.MSG('<img src="data:image/jpeg;base64,'+v.image+'">',true)
-                        }
-                    ).catch(e=>{
-                        alert('很遗憾!翻译功能要跨域!');
-                    });
-                //https://tmt.tencentcloudapi.com/?Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=zh&Target=en&ProjectId=0
+        },
+        'translate':{
+            'load':e=>{
+                if(this.translateKey&&this.translateKey.id&&this.translateKey.key){
+                    return this.btnMap['translate']['Baidu']('POST');
+                }
+                return this.btnMap['translate']['show']();
+                //fetch(new Request('http://ztranslate.net/service?api_key=E4F1GW8S3D&target_lang=Zh&source_lang=En&mode=Fast&output=txt', {'method':'POST','body': JSON.stringify({image:img64})}))
+            },
+            'save':e=>{
+                let translateKey = {
+                    id:document.querySelector('.gba-translateid').value,
+                    key:document.querySelector('.gba-translatekey').value,
+                    host:document.querySelector('.gba-translatehost').value
+                };
+                if(translateKey.id&&translateKey.key){
+                    this.setConfig({translateKey});
+                    this.btnMap['closelist']();
+                }else{
+                    alert('appid和密匙不能留空！');
+                }
+            },
+            'show':e=>{
+                let translate = this.translateKey||{'id':'','key':'','host':'http://182.254.227.110/api/translateBaidu.php'},
+                    HTML = `<div class="gba-list-translate"><h3>翻译API 目前使用百度</h3><p>申请地址:<a href="https://api.fanyi.baidu.com/product/22">https://api.fanyi.baidu.com/product/22</a></p><p>申请成功后点击<a href="https://api.fanyi.baidu.com/manage/developer">开发者信息</a></p><p><label>APP ID<input type="text" class="gba-translateid" tabIndex="0" value="${translate.id}"></label></p><p><label>密钥<input type="text" class="gba-translatekey" tabIndex="1" value="${translate.key}"></label></p><p><label>跨域服务器：<input type="text" class="gba-translatehost" tabIndex="1" value="${translate.host}"></label></p><p><label><button data-btn="translate-save">保存</button></p><p>跨域服务器由能哥网自由服务提供（使用期限不确定！），如果有服务器资源的朋友，可以自己搭建下方是PHP代码！百度翻译月免费1万次，多出部分四毛钱一次！</p><textarea><?php\nheader("Access-Control-Allow-Origin:*"); \nheader("Content-type: text/html; charset=utf-8");\nerror_reporting(E_ALL & ~E_NOTICE);\nclass NengeApp{\n    function __construct(){\n        $this->API = array(\n            "baidu" => array (\n                "txt"=>"https://fanyi-api.baidu.com/api/trans/vip/translate?",\n                "img"=>"https://fanyi-api.baidu.com/api/trans/sdk/picture?"\n            )\n        );\n        $this->getRequest(empty($_GET["q"])&&isset($_FILES["image"]) ? "POST":"GET","baidu");\n    }\n    function getRequest($method="GET",$sitename,$timeout = 20){\n        $isGET = $method=="GET" ;\n        $query =$_SERVER["QUERY_STRING"];\n        $url = $this->API[$sitename][$isGET?"txt":"img"];\n        $ssl = parse_url($url)["scheme"] == "https" ? false : null;\n        $bodyDate = array();\n        foreach($_POST as $k=>$v){\n            $bodyDate[$k] = $v;\n        }\n        foreach($_FILES as $k=>$v){\n            $bodyDate[$k] = new CURLFile($v["tmp_name"],$v["type"],$v["name"]);//"@".$v["tmp_name"].";type=".$v["type"].";filename=".$v["name"];\n        }\n        $curlObj = curl_init();\n        $options = [\n            CURLOPT_URL => $url.$query,\n            CURLOPT_RETURNTRANSFER => 1,\n            CURLOPT_FOLLOWLOCATION => 1,\n            CURLOPT_AUTOREFERER => 1,\n            CURLOPT_USERAGENT => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",\n            CURLOPT_TIMEOUT => $timeout,\n            //CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_0,\n            //请求头\n            CURLOPT_HTTPHEADER => array(\n                "User-Agent"      => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) baidu-music/1.2.1 Chrome/66.0.3359.181 Electron/3.0.5 Safari/537.36",\n                "Accept"          => "*/*",\n                //"text/html;charset=UTF-8",\n                "Content-type"    => "application/json;charset=UTF-8",\n                "Accept-Language" => "zh-CN",\n            ),\n            //IP4\n            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,\n            //CURLOPT_REFERER => isset($api["refer"])?$api["refer"]:$url_info["host"], //伪造来路\n            //CURLOPT_COOKIEFILE=>dirname(__FILE__)."/kugou.cookies.txt",\n            //CURLOPT_COOKIEJAR=>dirname(__FILE__)."/kugou.cookies.txt",\n            CURLOPT_POST=>$isGET ?false:true,\n            CURLOPT_POSTFIELDS => $isGET? null:$bodyDate,\n            CURLOPT_SSL_VERIFYHOST => $ssl,\n            CURLOPT_SSL_VERIFYPEER => $ssl,\n            CURLOPT_COOKIE=>null,\n        ];\n        //print_r($options);exit;\n        curl_setopt_array($curlObj, $options);\n        $returnData = curl_exec($curlObj);\n        if (curl_errno($curlObj)) {\n            //error message\n            $returnData = curl_error($curlObj);\n        }\n        curl_close($curlObj);\n        echo $returnData;\n    }\n}\nnew NengeApp();\n?></textarea></div>`;
+                this.RESULT(HTML);
+                document.querySelector('.gba-translateid').select()
 
             },
-            translateBaidu: (method, config) => {
+            Baidu: (method, config) => {
                 config = config || {};
                 method = method || 'GET';
                 let g = new FormData(),
                     p,
                     image = this.DATA.SCREEN, // uintArray8
                     gd = {
-                        "key": '6ANW8_VFJP_VYlGiKZhp',
-                        "appid": '20220119001059108',
+                        "key": this.translateKey.key,//'6ANW8_VFJP_VYlGiKZhp',
+                        "appid": this.translateKey.id,//'20220119001059108',
                         "from": 'en',
                         "to": 'zh',
                         "q":"",
-                        "salt": (new Date).getTime(),
+                        "salt": Math.random(),
                         "cuid": 'APICUID',
                         "mac": 'mac',
                         "version": 3,
@@ -324,10 +295,12 @@ $.ajax({
                         //"query":'apple',
                     },
                     delkey = ['mac','cuid','version','paste','key'],
-                    url = 'https://fanyi-api.baidu.com/api/trans/sdk/picture?';
+                    url = this.translateKey.host+'?';//'http://127.0.0.1/api/translateBaidu.php?';
+                    //https://fanyi-api.baidu.com/api/trans/sdk/picture?
                 for (var i in gd) {
                     g.append(i, config[i] || gd[i]);
                 }
+                //return console.log(image.buffer);
                 //SparkMD5 https://github.com/satazor/js-spark-md5/tree/v3.0.2
                 if (method == 'GET') {
                     g.append("callback", 'NengeApp.MSGJSON');
@@ -335,33 +308,40 @@ $.ajax({
                 } else {
                     delkey = ['q','key'];
                     p = new FormData();
-                    p.append("image", new File([image.buffer], 'my.png', {
-                        type: "image/png"
-                    }));
-                    g.append("sign", SparkMD5.hash(g.get('appid') + SparkMD5.ArrayBuffer.hash(image.buffer) + g.get('salt') + g.get('cuid') + g.get('mac') + g.get('key')));
+                    let imgmd5 = SparkMD5.ArrayBuffer.hash(image.buffer);
+                    p.append("image", new File([image.buffer], 'my.png', {type: "image/png"}));
+                    console.log(imgmd5)
+                    g.append("sign", SparkMD5.hash(g.get('appid') +imgmd5+ g.get('salt') + g.get('cuid') + g.get('mac') + g.get('key')));
 
                 }
-                g.delete('key');
                 delkey.forEach(val=>g.delete(val));
                 g = new URLSearchParams(g);
                 if (method == 'GET') return this.AddJs(url + g);
-                fetch(
+                else fetch(
                     new Request(url + g, {
                         'method': method,
-                        'headers': {
-                            'Content-Type': method == 'GET' ? 'application/x-www-form-urlencoded' : 'multipart/formdata'
-                        },
+                        //'headers': {
+                        //    'Content-Type': method == 'GET' ? 'application/x-www-form-urlencoded' : 'multipart/formdata'
+                        //},
                         'body': p
                     })
                 ).then(
                     v => v.json()
                 ).then(
-                    v => this.MSG('<pre>'+v&&v.data&&v.data.sumDst||v.error_msg+'</pre>')
+                    v => {
+                        let msg;
+                        if(v&&v.data){
+                            msg = v.data.sumDst? v.data.sumDst.replace(/\n/g,'<br>') : v.error_msg;
+                        }
+                        this.MSG('<div class="gba-result-translate">'+msg+'</div>')
+                    }
+                    // console.log(v)
+                    // '<pre>'+v&&v.data&&v.data.sumDst||v.error_msg+'</pre>',true)
                 ).catch(
                     e => alert('很遗憾!翻译功能要跨域!')
                 );
-            }
             },
+        },
         'cheat':{
             'run':e=>{
                 let cheat = document.querySelector('.gba-cheats').value.split('\n'),
@@ -535,6 +515,10 @@ $.ajax({
         'closemenu': e => {
             this.btnMap['SetMenu'](0);
         },
+        'closemsg': e => {
+            clearTimeout(this.Timer.msg);
+            document.querySelector('.gba-msg').style.display = "none";
+        },
         'SetMenu': e => {
             document.querySelector('.gba-action').style.cssText = e?'top:10%':'';
         }
@@ -549,13 +533,7 @@ $.ajax({
         let msg = document.querySelector('.gba-msg');
         msg.innerHTML = str;
         msg.style.display = '';
-        if(!bool){
-            clearTimeout(this.Timer.msg);
-            this.Timer.msg = setTimeout(()=>{
-                msg.style.display = "none";
-                msg = null;
-            },1500)
-        }else msg = null;
+        msg = null;
     }
     MSGJSON(str,bool){
         return this.MSG('<pre>'+JSON.stringify(str, null, 4)+'</pre>',true)

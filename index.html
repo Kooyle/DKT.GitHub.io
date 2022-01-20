@@ -74,12 +74,12 @@
             -webkit-user-drag: text;
             -webkit-user-select: text;
             transition: all .25s ease-in;
+            font-size: 14px;
         }
 
         .gba-list {
             top: 100%;
         }
-
         .gba-list-file,
         .gba-result,
         .gba-list-tips,
@@ -135,20 +135,37 @@
         }
 
         .gba-msg {
-            width: 300px;
-            height: 300px;
             overflow: visible;
             display: inline-block;
             margin: auto;
-            right: 0;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            background-color: #08000050;
-            color: #fff;
+            height: auto;
+            width: auto;
+            right: 25%;
+            top: 25%;
+            left: 25%;
+            bottom: 25%;
             display: block;
             font-size: 12px;
             z-index: 10004;
+        }
+        .gba-result-translate{
+            
+    font-size: 36px;
+    color: transparent;
+    font-weight: bold;
+    text-shadow:-1px -1px 1px #4a4141;
+    background-image: -webkit-linear-gradient(180deg, #e6f0f5, #e3e3e2, #3e4040);
+    -webkit-background-clip: text;
+
+        }
+        .gba-list-translate p{
+            width: 50%;
+            margin: 0px auto;
+            text-align: left    ;
+        }
+        .gba-list-translate textarea{
+            width: 98%;
+    height: 600px;
         }
 
         .gba-action {
@@ -471,7 +488,7 @@
             <div class="gba-action-top gba-flex">
                 <button type="button" data-btn="db-uploadrooms">上传游戏</button>
                 <button type="button" data-btn="db-saverooms">保存ROOM</button>
-                <button type="button" data-btn="do-translate">翻译API</button>
+                <button type="button" data-btn="translate-show">翻译API</button>
                 <button type="button" data-btn="do-getinfo">信息下载</button>
             </div>
             <div class="gba-action-op">电子存档:
@@ -506,7 +523,9 @@
         </div>
         <div class="gba-list">
             <h3 data-btn="closelist">点击这里关闭</h3>
-            <div class="gba-result"></div>
+            <div class="gba-result">
+                
+            </div>
             <div class="gba-list-ctrl"></div>
             <div class="gba-list-pad">
                 <h3>手柄参数,基于我的廉价PS4手柄（百元不到）</h3>
@@ -518,12 +537,12 @@
                 <textarea class="gba-list-pad-txt" data-btn="Keygamepad"></textarea>
             </div>
         </div>
-        <div class="gba-msg" style="display: none;">
+        <div class="gba-msg" style="display: none;" data-btn="closemsg">
 
         </div>
         <div class="gba-ctrl">
             <div class="gba-ctrl-menu">
-                <span data-btn="do-fanyi" class="gba-btn"><svg viewBox="0 0 496 512">
+                <span data-btn="translate-load" class="gba-btn"><svg viewBox="0 0 496 512">
                         <path fill="currentColor"
                             d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"
                             class=""></path>
