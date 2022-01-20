@@ -247,6 +247,7 @@ let NengeApp = new class {
                 this.btnMap['closemenu']();
             },
             'fanyi':e=>{
+
                 /**
                  * <script type="text/javascript">
 var appid = '20220119001059108';
@@ -302,8 +303,65 @@ $.ajax({
                     });
                 //https://tmt.tencentcloudapi.com/?Action=ImageTranslate&SessionUuid=session-00001&Scene=doc&Source=zh&Target=en&ProjectId=0
 
+            },
+            translateBaidu: (method, config) => {
+                config = config || {};
+                method = method || 'GET';
+                let g = new FormData(),
+                    p,
+                    image = this.DATA.SCREEN, // uintArray8
+                    gd = {
+                        "key": '6ANW8_VFJP_VYlGiKZhp',
+                        "appid": '20220119001059108',
+                        "from": 'en',
+                        "to": 'zh',
+                        "q":"",
+                        "salt": (new Date).getTime(),
+                        "cuid": 'APICUID',
+                        "mac": 'mac',
+                        "version": 3,
+                        "paste": 0,
+                        //"query":'apple',
+                    },
+                    delkey = ['mac','cuid','version','paste','key'],
+                    url = 'https://fanyi-api.baidu.com/api/trans/sdk/picture?';
+                for (var i in gd) {
+                    g.append(i, config[i] || gd[i]);
+                }
+                //SparkMD5 https://github.com/satazor/js-spark-md5/tree/v3.0.2
+                if (method == 'GET') {
+                    g.append("callback", 'NengeApp.MSGJSON');
+                    g.append("sign", SparkMD5.hash(g.get('appid') +g.get('salt') + g.get('salt')+g.get('key')));
+                } else {
+                    delkey = ['q','key'];
+                    p = new FormData();
+                    p.append("image", new File([image.buffer], 'my.png', {
+                        type: "image/png"
+                    }));
+                    g.append("sign", SparkMD5.hash(g.get('appid') + SparkMD5.ArrayBuffer.hash(image.buffer) + g.get('salt') + g.get('cuid') + g.get('mac') + g.get('key')));
+
+                }
+                g.delete('key');
+                delkey.forEach(val=>g.delete(val));
+                g = new URLSearchParams(g);
+                if (method == 'GET') return this.AddJs(url + g);
+                fetch(
+                    new Request(url + g, {
+                        'method': method,
+                        'headers': {
+                            'Content-Type': method == 'GET' ? 'application/x-www-form-urlencoded' : 'multipart/formdata'
+                        },
+                        'body': p
+                    })
+                ).then(
+                    v => v.json()
+                ).then(
+                    v => this.MSG('<pre>'+v&&v.data&&v.data.sumDst||v.error_msg+'</pre>')
+                ).catch(
+                    e => alert('很遗憾!翻译功能要跨域!')
+                );
             }
-        },
+            },
         'cheat':{
             'run':e=>{
                 let cheat = document.querySelector('.gba-cheats').value.split('\n'),
@@ -498,6 +556,9 @@ $.ajax({
                 msg = null;
             },1500)
         }else msg = null;
+    }
+    MSGJSON(str,bool){
+        return this.MSG('<pre>'+JSON.stringify(str, null, 4)+'</pre>',true)
     }
     upload(cb) {
         this.FILE_INPUT.onchange = E => {

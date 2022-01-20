@@ -136,7 +136,7 @@
 
         .gba-msg {
             width: 300px;
-            height: 40px;
+            height: 300px;
             overflow: visible;
             display: inline-block;
             margin: auto;
@@ -206,33 +206,33 @@
 
         .vk[data-k=l] {
             left: 15px;
-            top: 55px;
+            top: calc(100% * 0.5 - 150px);
             padding: 2px 8px;
-            width: 35px;
+            width: 50px;
             font-size: 1.5rem;
         }
 
         .vk[data-k=r] {
             right: 15px;
-            top: 55px;
+            top: calc(100% * 0.5 - 150px);
             padding: 2px 8px;
-            width: 35px;
+            width: 50px;
             font-size: 1.5rem;
         }
 
         .vk[data-k=select] {
-            left: 70px;
-            bottom: 70px;
+            top: calc(100% * 0.5 + 100px);
+            left: 25%;
             padding: 0px;
-            width: auto;
+            width: 60px;
             font-size: 1rem;
         }
 
         .vk[data-k=start] {
-            right: 70px;
-            bottom: 70px;
+            top: calc(100% * 0.5 + 100px);
+            right: 25%;
             padding: 0px;
-            width: auto;
+            width: 60px;
             font-size: 1rem;
         }
 
@@ -547,8 +547,8 @@
             <div class="vk-rect vk" data-k="r">R</div>
             <div class="vk-round vk" data-k="a">A</div>
             <div class="vk-round vk" data-k="b">B</div>
-            <div class="vk-rect vk" data-k="select">Select</div>
-            <div class="vk-rect vk" data-k="start">Start</div>
+            <div class="vk-rect vk" data-k="select">SELECT</div>
+            <div class="vk-rect vk" data-k="start">START</div>
             <div class="vk" data-k="left">←</div>
             <div class="vk" data-k="right">→</div>
             <div class="vk" data-k="up">↑</div>
@@ -559,10 +559,10 @@
             <div class="vk vk-hide" data-k="dr"></div>
         </div>
     </div>
-    <script src="js/md5.js"></script><!-- v2 -->
+    <script src="/js/md5.js"></script><!-- v2 -->
     <!--<script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>-->
-    <script src="js/dexie.min.js"></script>
-    <script src="js/retroarch.js"></script>
+    <script src="/js/dexie.min.js"></script>
+    <script src="/js/retroarch.js"></script>
     <script src="/js/NengeApp.js"></script>
 </body>
 
