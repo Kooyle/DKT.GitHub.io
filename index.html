@@ -601,9 +601,10 @@
             <div class="vk vk-hide" data-k="dr"></div>
         </div>
     </div>
-    <script>
-        ['https://cdn.bootcdn.net/ajax/libs/spark-md5/3.0.2/spark-md5.min.js','https://cdn.bootcdn.net/ajax/libs/dexie/3.2.0/dexie.min.js','/js/retroarch.js','/js/NengeApp.js'].forEach(val=>document.write(`<script src="${document.domain.search(/localhost|127.0./g) !== -1 ? 'js/'+val.split('/').pop():val}"><\/script>`))
-    </script>>
+    <script src="https://cdn.bootcdn.net/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/dexie/3.2.0/dexie.min.js"></script>
+    <script src="/js/retroarch.js"></script>
+    <script src="/js/NengeApp.js"></script>
 </body>
 
 </html>
