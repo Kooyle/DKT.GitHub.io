@@ -282,8 +282,8 @@ let NengeApp = new class {
                     p,
                     image = this.DATA.SCREEN, // uintArray8
                     gd = {
-                        "key": this.translateKey.key,//'6ANW8_VFJP_VYlGiKZhp',
-                        "appid": this.translateKey.id,//'20220119001059108',
+                        "key": this.translateKey.key,
+                        "appid": this.translateKey.id,
                         "from": 'en',
                         "to": 'zh',
                         "q":"",
